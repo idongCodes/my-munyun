@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script>
+        // Helper to notify Streamlit of a value update
+        function sendToStreamlit(value) {
+            window.parent.postMessage({
+                isStreamlitMessage: true,
+                type: "streamlit:setComponentValue",
+                value: value
+            }, "*");
+        }
+
+        // Setup communication handler
+        window.addEventListener("message", function(e) {
+            if (e.data.type === "streamlit:render") {
+                const args = e.data.args;
+                const action = args.action || "read";
+                
+                try {
+                    if (action === "write" && args.loginTime) {
+                        window.parent.sessionStorage.setItem("munyun_logged_in", "true");
+                        window.parent.sessionStorage.setItem("munyun_login_time", args.loginTime);
+                        sendToStreamlit({ status: "written" });
+                    } else if (action === "clear") {
+                        window.parent.sessionStorage.removeItem("munyun_logged_in");
+                        window.parent.sessionStorage.removeItem("munyun_login_time");
+                        sendToStreamlit({ status: "cleared" });
+                    } else {
+                        // Default: read session
+                        const loggedIn = window.parent.sessionStorage.getItem("munyun_logged_in");
+                        const loginTime = window.parent.sessionStorage.getItem("munyun_login_time");
+                        sendToStreamlit({ loggedIn: loggedIn === "true", loginTime: loginTime });
+                    }
+                } catch(err) {
+                    sendToStreamlit({ error: err.message });
+                }
+            }
+        });
+    </script>
+</head>
+<body>
+</body>
+</html>

@@ -127,7 +127,38 @@ ALLOWED_PHONE_NUMBERS = [
     if n.strip()
 ]
 
-# --- Authentication & Multi-Factor System ---
+# --- Restoration & Synchronization of Browser Tab Sessions ---
+# Declare local custom session_restorer component
+component_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".session_component")
+session_restorer = st.components.v1.declare_component("session_restorer", path=component_path)
+
+# 1. Clear session storage if manual logout was triggered
+if st.session_state.get('clear_storage', False):
+    session_restorer(action="clear")
+    st.session_state.clear_storage = False
+
+# 2. Check browser tab sessionStorage if python session state is not logged in
+if not st.session_state.get('logged_in', False) and not st.session_state.get('setup_mfa', False):
+    session_data = session_restorer(action="read")
+    if session_data and session_data.get("loggedIn"):
+        try:
+            login_time = datetime.datetime.fromisoformat(session_data.get("loginTime"))
+            # Validate 72-hour session lifespan
+            elapsed = datetime.datetime.now() - login_time
+            if elapsed.total_seconds() <= 72 * 3600:
+                st.session_state.logged_in = True
+                st.session_state.login_time = login_time
+                st.session_state.splash_shown = True # Skip splash screen on reload restore
+                st.rerun()
+        except Exception:
+            pass
+
+# 3. If logged in, ensure state is written/updated in sessionStorage
+if st.session_state.get('logged_in', False) and 'login_time' in st.session_state:
+    login_iso = st.session_state.login_time.isoformat()
+    session_restorer(action="write", loginTime=login_iso)
+
+# --- Authentication & Multi-Factor System State Init ---
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 if 'setup_mfa' not in st.session_state:
@@ -720,6 +751,7 @@ st.sidebar.markdown("---")
 if st.sidebar.button("🔓 Logout"):
     st.session_state.logged_in = False
     st.session_state.login_time = None
+    st.session_state.clear_storage = True
     st.rerun()
 
 # --- Main Dashboard ---
