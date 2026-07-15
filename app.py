@@ -49,6 +49,7 @@ def load_css():
 load_css()
 
 # Render Splash Screen once per session load
+just_shown_splash = False
 if 'splash_shown' not in st.session_state:
     st.markdown("""
     <div id="splash-screen" style="text-align: center;">
@@ -58,6 +59,7 @@ if 'splash_shown' not in st.session_state:
     </div>
     """, unsafe_allow_html=True)
     st.session_state.splash_shown = True
+    just_shown_splash = True
 
 # --- Config and Plaid Client Initialization ---
 def get_config(key, default=""):
@@ -78,6 +80,48 @@ is_plaid_configured = bool(PLAID_CLIENT_ID and PLAID_SECRET)
 if not is_plaid_configured:
     # If Plaid is not configured, force mock data mode
     USE_MOCK_DATA = True
+
+APP_PASSWORD = get_config("APP_PASSWORD", "admin")
+
+# --- Authentication System ---
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
+
+if not st.session_state.logged_in:
+    fade_class = "delayed-fade" if just_shown_splash else "instant-fade"
+    
+    st.markdown(f'<div class="{fade_class}">', unsafe_allow_html=True)
+    
+    col_space1, col_login, col_space2 = st.columns([1, 1.3, 1])
+    with col_login:
+        st.markdown(f"""
+        <div style="text-align: center; margin-top: 10vh; margin-bottom: 20px;">
+            <div class="login-title"><span style="color: #4e80e4;">💸</span> Munyun</div>
+            <div class="login-subtitle">Secure Wealth Portal</div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        with st.form("login_form", clear_on_submit=False):
+            password = st.text_input("Passcode", type="password", placeholder="••••")
+            submit = st.form_submit_button("Authenticate")
+            
+            if submit:
+                if password == APP_PASSWORD:
+                    st.session_state.logged_in = True
+                    st.success("Authenticated!")
+                    st.rerun()
+                else:
+                    st.error("Incorrect passcode. Please try again.")
+                    
+        st.markdown("""
+        <p style="text-align: center; color: #4b5563; font-size: 0.8rem; margin-top: 15px; font-family: 'Plus Jakarta Sans', sans-serif;">
+            Protected by AES-256 local database encryption.
+        </p>
+        """, unsafe_allow_html=True)
+        
+    st.markdown('</div>', unsafe_allow_html=True)
+    st.stop()
+
 
 plaid_client = None
 if is_plaid_configured:
