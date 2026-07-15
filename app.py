@@ -1,18 +1,30 @@
 import os
+import random
+import datetime
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-import requests
 from dotenv import load_dotenv
+
+# Import Plaid SDK
+import plaid
+from plaid.api import plaid_api
+from plaid.configuration import Configuration
+from plaid.api_client import ApiClient
+from plaid.model.link_token_create_request import LinkTokenCreateRequest
+from plaid.model.link_token_create_request_user import LinkTokenCreateRequestUser
+from plaid.model.products import Products
+from plaid.model.country_code import CountryCode
+from plaid.model.item_public_token_exchange_request import ItemPublicTokenExchangeRequest
+from plaid.model.accounts_balance_get_request import AccountsBalanceGetRequest
+from plaid.model.transactions_get_request import TransactionsGetRequest
+from plaid.model.transactions_get_request_options import TransactionsGetRequestOptions
 
 import database
 
-# Load environment variables
+# Load environment variables (locally)
 load_dotenv()
-
-# API backend url
-BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
 
 # Page Configuration
 st.set_page_config(
@@ -32,12 +44,12 @@ def load_css():
         with open(css_file) as f:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
     else:
-        # Fallback inline basic styles
-        st.markdown("<style>body { background-color: #0d1117; color: white; }</style>", unsafe_allow_html=True)
+        st.markdown("<style>body { background-color: #000000; color: white; }</style>", unsafe_allow_html=True)
 
 load_css()
 
 # Render Splash Screen once per session load
+just_shown_splash = False
 if 'splash_shown' not in st.session_state:
     st.markdown("""
     <div id="splash-screen" style="text-align: center;">
@@ -47,75 +59,446 @@ if 'splash_shown' not in st.session_state:
     </div>
     """, unsafe_allow_html=True)
     st.session_state.splash_shown = True
+    just_shown_splash = True
 
-
-# --- Helper Functions ---
-def get_backend_status():
+# --- Config and Plaid Client Initialization ---
+def get_config(key, default=""):
+    # First check Streamlit Cloud Secrets, then fallback to local env
     try:
-        r = requests.get(f"{BACKEND_URL}/api/status", timeout=2)
-        if r.status_code == 200:
-            return r.json()
+        if key in st.secrets:
+            return st.secrets[key]
     except Exception:
         pass
-    return {
-        "is_plaid_configured": False,
-        "use_mock_data": True,
-        "plaid_env": "sandbox",
-        "boa_linked": False,
-        "cashapp_linked": False
+    return os.getenv(key, default)
+
+PLAID_CLIENT_ID = get_config("PLAID_CLIENT_ID")
+PLAID_SECRET = get_config("PLAID_SECRET")
+PLAID_ENV = get_config("PLAID_ENV", "sandbox")
+USE_MOCK_DATA = str(get_config("USE_MOCK_DATA", "True")).lower() == "true"
+
+is_plaid_configured = bool(PLAID_CLIENT_ID and PLAID_SECRET)
+if not is_plaid_configured:
+    # If Plaid is not configured, force mock data mode
+    USE_MOCK_DATA = True
+
+import pyotp
+import urllib.parse
+
+APP_PASSWORD = get_config("APP_PASSWORD", "admin")
+TOTP_SECRET = get_config("TOTP_SECRET", "")
+
+# --- Authentication & Multi-Factor System ---
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
+if 'setup_mfa' not in st.session_state:
+    st.session_state.setup_mfa = False
+
+# Auto-logout after 72 hours
+if st.session_state.logged_in and 'login_time' in st.session_state:
+    elapsed = datetime.datetime.now() - st.session_state.login_time
+    if elapsed.total_seconds() > 72 * 3600:
+        st.session_state.logged_in = False
+        st.session_state.login_time = None
+        st.session_state.splash_shown = False
+        st.rerun()
+
+if not st.session_state.logged_in:
+    fade_class = "delayed-fade" if just_shown_splash else "instant-fade"
+    st.markdown(f'<div class="{fade_class}">', unsafe_allow_html=True)
+    
+    col_space1, col_login, col_space2 = st.columns([1, 1.3, 1])
+    with col_login:
+        st.markdown(f"""
+        <div style="text-align: center; margin-top: 8vh; margin-bottom: 20px;">
+            <div class="login-title"><span style="color: #4e80e4;">💸</span> Munyun</div>
+            <div class="login-subtitle">Secure Wealth Portal</div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # 1. Google Authenticator Setup Wizard
+        if st.session_state.setup_mfa:
+            st.markdown("### 🔒 Setup 2FA (Google Authenticator)")
+            st.write("Scan the QR code below using your Google Authenticator app on your phone, then enter the verification code.")
+            
+            # Generate temporary base32 secret if not already set
+            if 'temp_totp_secret' not in st.session_state:
+                st.session_state.temp_totp_secret = pyotp.random_base32()
+                
+            temp_secret = st.session_state.temp_totp_secret
+            
+            # Create provisioning URI for Authenticator scan
+            totp = pyotp.TOTP(temp_secret)
+            # Use 'Munyun:idongcodes' as label
+            provisioning_uri = totp.provisioning_uri(name="idongcodes", issuer_name="Munyun")
+            
+            # Use QR code generator API to display image
+            qr_api_url = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={urllib.parse.quote(provisioning_uri)}&color=4e80e4&bgcolor=000000"
+            
+            # Display QR Code centered
+            st.markdown(f'<div style="text-align: center; margin: 15px 0;"><img src="{qr_api_url}" style="border: 4px solid #111827; border-radius: 12px;" /></div>', unsafe_allow_html=True)
+            
+            st.code(f"Secret Key: {temp_secret}", language="text")
+            
+            with st.form("verify_totp_form", clear_on_submit=False):
+                verify_code = st.text_input("Enter 6-digit Verification Code", placeholder="000 000")
+                verify_submit = st.form_submit_button("Verify & Activate")
+                
+                if verify_submit:
+                    # Clean whitespaces
+                    clean_code = verify_code.replace(" ", "")
+                    if totp.verify(clean_code):
+                        st.success("🎉 Google Authenticator verification successful!")
+                        st.markdown(f"""
+                        > [!IMPORTANT]
+                        > **Save this secret to complete setup:**
+                        > Add this variable to your `.env` file (or your Streamlit Cloud secrets):
+                        > ```env
+                        > TOTP_SECRET={temp_secret}
+                        > ```
+                        """)
+                        if st.form_submit_button("Proceed to Dashboard"):
+                            st.session_state.logged_in = True
+                            st.session_state.login_time = datetime.datetime.now()
+                            st.session_state.setup_mfa = False
+                            st.rerun()
+                    else:
+                        st.error("Invalid verification code. Please check your authenticator app and try again.")
+            
+            if st.button("Cancel & Go Back"):
+                st.session_state.setup_mfa = False
+                st.rerun()
+                
+        # 2. Authenticator login (if TOTP_SECRET is configured)
+        elif TOTP_SECRET:
+            with st.form("totp_login_form", clear_on_submit=False):
+                totp_code = st.text_input("Google Authenticator Code", type="default", placeholder="000 000")
+                totp_submit = st.form_submit_button("Unlock Portal")
+                
+                if totp_submit:
+                    clean_code = totp_code.replace(" ", "")
+                    totp = pyotp.TOTP(TOTP_SECRET)
+                    if totp.verify(clean_code):
+                        st.session_state.logged_in = True
+                        st.session_state.login_time = datetime.datetime.now()
+                        st.success("Access Granted!")
+                        st.rerun()
+                    else:
+                        st.error("Invalid Authenticator code. Please check your app.")
+                        
+        # 3. Standard password login (if TOTP_SECRET is not configured)
+        else:
+            with st.form("login_form", clear_on_submit=False):
+                password = st.text_input("Passcode", type="password", placeholder="••••")
+                submit = st.form_submit_button("Authenticate")
+                
+                if submit:
+                    if password == APP_PASSWORD:
+                        st.session_state.logged_in = True
+                        st.session_state.login_time = datetime.datetime.now()
+                        st.success("Authenticated!")
+                        st.rerun()
+                    else:
+                        st.error("Incorrect passcode. Please try again.")
+            
+            st.markdown("<p style='text-align: center; margin-top: 10px;'>- or -</p>", unsafe_allow_html=True)
+            if st.button("🛡️ Setup Google Authenticator 2FA"):
+                st.session_state.setup_mfa = True
+                st.rerun()
+                
+        st.markdown("""
+        <p style="text-align: center; color: #4b5563; font-size: 0.8rem; margin-top: 15px; font-family: 'Plus Jakarta Sans', sans-serif;">
+            Protected by AES-256 local database encryption.
+        </p>
+        """, unsafe_allow_html=True)
+        
+    st.markdown('</div>', unsafe_allow_html=True)
+    st.stop()
+
+
+plaid_client = None
+if is_plaid_configured:
+    try:
+        host = f"https://{PLAID_ENV}.plaid.com"
+        configuration = Configuration(
+            host=host,
+            api_key={
+                'clientId': PLAID_CLIENT_ID,
+                'secret': PLAID_SECRET,
+            }
+        )
+        api_client = ApiClient(configuration)
+        plaid_client = plaid_api.PlaidApi(api_client)
+    except Exception as e:
+        st.sidebar.error(f"Error initializing Plaid Client: {e}")
+        USE_MOCK_DATA = True
+
+# --- Mock Data Generator ---
+def generate_mock_data():
+    database.clear_accounts()
+    database.clear_transactions()
+
+    # Create Mock Accounts
+    mock_accounts = [
+        {
+            "id": "mock_boa_checking",
+            "name": "BoA Advantage Checking",
+            "mask": "4829",
+            "type": "depository",
+            "subtype": "checking",
+            "balance_available": 5240.23,
+            "balance_current": 5240.23,
+            "institution": "Bank of America"
+        },
+        {
+            "id": "mock_boa_savings",
+            "name": "BoA Preferred Savings",
+            "mask": "8812",
+            "type": "depository",
+            "subtype": "savings",
+            "balance_available": 18450.00,
+            "balance_current": 18450.00,
+            "institution": "Bank of America"
+        },
+        {
+            "id": "mock_cashapp",
+            "name": "Cash App Balance",
+            "mask": "9931",
+            "type": "depository",
+            "subtype": "checking",
+            "balance_available": 320.50,
+            "balance_current": 320.50,
+            "institution": "Cash App (Lincoln Savings)"
+        }
+    ]
+    database.save_accounts(mock_accounts)
+
+    # Create Mock Transactions for the last 30 days
+    categories = ["Income", "Groceries", "Dining", "Subscriptions", "Transfers", "Shopping", "Utilities", "Travel"]
+    merchants = {
+        "Income": [("Direct Deposit / Payroll", 2500.00)],
+        "Groceries": [("Trader Joe's", -124.50), ("Whole Foods", -89.20), ("Safeway", -54.30)],
+        "Dining": [("Starbucks", -6.25), ("Chipotle", -14.50), ("Sweetgreen", -16.80), ("Uber Eats", -32.40)],
+        "Subscriptions": [("Netflix", -15.49), ("Spotify", -10.99), ("ChatGPT Plus", -20.00)],
+        "Transfers": [("Cash App Sent to Alice", -40.00), ("Cash App Received from Bob", 15.00), ("Cash App Cash Out", 200.00)],
+        "Shopping": [("Amazon.com", -89.99), ("Target", -42.15), ("Apple Store", -129.00)],
+        "Utilities": [("Comcast Internet", -79.99), ("ConEd Utility Bill", -112.40)],
+        "Travel": [("Uber", -18.50), ("Lyft", -15.20), ("Chevron Gas Station", -45.00)]
     }
 
-def sync_data():
-    try:
-        r = requests.post(f"{BACKEND_URL}/api/sync")
-        return r.status_code == 200
-    except Exception:
-        return False
+    mock_txs = []
+    start_date = datetime.date.today() - datetime.timedelta(days=30)
+    tx_id_counter = 1
 
-def clear_data():
-    try:
-        r = requests.post(f"{BACKEND_URL}/api/clear")
-        return r.status_code == 200
-    except Exception:
-        return False
+    # Add regular direct deposit twice a month
+    for d in [1, 15]:
+        tx_date = start_date.replace(day=d)
+        if tx_date <= datetime.date.today():
+            mock_txs.append({
+                "id": f"tx_mock_{tx_id_counter}",
+                "date": tx_date.isoformat(),
+                "amount": -2500.00,  # Plaid format: negative is credit/income
+                "name": "Direct Deposit / Payroll",
+                "category": "Income",
+                "account_id": "mock_boa_checking",
+                "account_name": "BoA Advantage Checking",
+                "institution": "Bank of America",
+                "pending": False
+            })
+            tx_id_counter += 1
 
-def toggle_mock_mode(use_mock):
-    try:
-        r = requests.post(f"{BACKEND_URL}/api/toggle_mock", json={"use_mock": use_mock})
-        return r.status_code == 200
-    except Exception:
-        return False
+    # Generate random daily transactions
+    curr_date = start_date
+    while curr_date <= datetime.date.today():
+        if curr_date.day in [1, 15]:
+            curr_date += datetime.timedelta(days=1)
+            continue
+        
+        if random.random() < 0.7:
+            cat = random.choice([c for c in categories if c != "Income"])
+            merchant_name, base_amount = random.choice(merchants[cat])
+            
+            variance = random.uniform(0.8, 1.2)
+            amount = round(base_amount * variance, 2)
+            
+            if cat == "Transfers" or merchant_name.startswith("Cash App"):
+                acc_id = "mock_cashapp"
+                acc_name = "Cash App Balance"
+                inst = "Cash App (Lincoln Savings)"
+                plaid_amount = -amount if "Received" in merchant_name else abs(amount)
+            else:
+                acc_id = random.choice(["mock_boa_checking", "mock_boa_savings"])
+                acc_name = "BoA Advantage Checking" if acc_id == "mock_boa_checking" else "BoA Preferred Savings"
+                inst = "Bank of America"
+                plaid_amount = abs(amount)
 
-# --- Plaid Link Integration inside Iframe ---
-def render_plaid_link(institution_code, label):
+            mock_txs.append({
+                "id": f"tx_mock_{tx_id_counter}",
+                "date": curr_date.isoformat(),
+                "amount": plaid_amount,
+                "name": merchant_name,
+                "category": cat,
+                "account_id": acc_id,
+                "account_name": acc_name,
+                "institution": inst,
+                "pending": False
+            })
+            tx_id_counter += 1
+
+        curr_date += datetime.timedelta(days=1)
+
+    database.save_transactions(mock_txs)
+
+# --- Plaid Serverless Logics ---
+
+def exchange_public_token(public_token, institution):
+    if USE_MOCK_DATA or not is_plaid_configured:
+        # In mock mode, pretend we succeeded and create mock records
+        database.set_credential(f"access_token_{institution}", f"mock_access_token_{institution}")
+        generate_mock_data()
+        return True
+
     try:
-        r = requests.post(f"{BACKEND_URL}/api/create_link_token", json={"institution": institution_code}, timeout=3)
-        if r.status_code == 200:
-            link_token = r.json().get("link_token")
-        else:
-            st.error("Failed to fetch link token from backend.")
-            return
+        request = ItemPublicTokenExchangeRequest(public_token=public_token)
+        response = plaid_client.item_public_token_exchange(request)
+        access_token = response['access_token']
+        item_id = response['item_id']
+        
+        database.set_credential(f"access_token_{institution}", access_token)
+        database.set_credential(f"item_id_{institution}", item_id)
+        
+        # Pull initial balances and transactions
+        sync_item_data(access_token, institution)
+        return True
     except Exception as e:
-        st.error(f"Backend offline: {e}")
+        st.error(f"Error exchanging public token: {e}")
+        return False
+
+def sync_item_data(access_token, institution):
+    if USE_MOCK_DATA or not is_plaid_configured:
+        return
+        
+    try:
+        # 1. Fetch Balances
+        balance_request = AccountsBalanceGetRequest(access_token=access_token)
+        balance_response = plaid_client.accounts_balance_get(balance_request)
+        
+        inst_name = "Bank of America" if institution == "boa" else "Cash App"
+        
+        accounts_to_save = []
+        for acc in balance_response['accounts']:
+            accounts_to_save.append({
+                "id": acc['account_id'],
+                "name": acc['name'],
+                "mask": acc.get('mask'),
+                "type": str(acc['type']),
+                "subtype": str(acc['subtype']) if acc.get('subtype') else None,
+                "balance_available": acc['balances'].get('available'),
+                "balance_current": acc['balances'].get('current'),
+                "institution": inst_name
+            })
+        database.save_accounts(accounts_to_save)
+        
+        # 2. Fetch Transactions (last 30 days)
+        start_date = datetime.date.today() - datetime.timedelta(days=30)
+        end_date = datetime.date.today()
+        
+        tx_request = TransactionsGetRequest(
+            access_token=access_token,
+            start_date=start_date,
+            end_date=end_date,
+            options=TransactionsGetRequestOptions(count=100)
+        )
+        tx_response = plaid_client.transactions_get(tx_request)
+        
+        txs_to_save = []
+        for tx in tx_response['transactions']:
+            txs_to_save.append({
+                "id": tx['transaction_id'],
+                "date": str(tx['date']),
+                "amount": float(tx['amount']),
+                "name": tx['merchant_name'] or tx['name'],
+                "category": tx['category'][0] if tx.get('category') else "Uncategorized",
+                "account_id": tx['account_id'],
+                "account_name": next((a['name'] for a in balance_response['accounts'] if a['account_id'] == tx['account_id']), None),
+                "institution": inst_name,
+                "pending": tx['pending']
+            })
+        database.save_transactions(txs_to_save)
+        
+    except Exception as e:
+        st.error(f"Error syncing data for {institution}: {e}")
+
+def sync_all():
+    if USE_MOCK_DATA:
+        generate_mock_data()
+        return True
+        
+    boa_token = database.get_credential("access_token_boa")
+    cashapp_token = database.get_credential("access_token_cashapp")
+    
+    if boa_token:
+        sync_item_data(boa_token, "boa")
+    if cashapp_token:
+        sync_item_data(cashapp_token, "cashapp")
+    return True
+
+def clear_all_data():
+    database.clear_accounts()
+    database.clear_transactions()
+    database.delete_credential("access_token_boa")
+    database.delete_credential("access_token_cashapp")
+    database.delete_credential("item_id_boa")
+    database.delete_credential("item_id_cashapp")
+    return True
+
+def create_link_token(institution_code):
+    if USE_MOCK_DATA or not is_plaid_configured:
+        return "mock_link_token"
+    try:
+        request = LinkTokenCreateRequest(
+            client_name="Munyun Finance",
+            language="en",
+            country_codes=[CountryCode('US')],
+            user=LinkTokenCreateRequestUser(
+                client_user_id="user_idongcodes"
+            ),
+            products=[Products('transactions')]
+        )
+        response = plaid_client.link_token_create(request)
+        return response['link_token']
+    except Exception as e:
+        st.error(f"Error generating link token: {e}")
+        return None
+
+# --- Query Params Redirect Handler ---
+query_params = st.query_params
+if "public_token" in query_params and "institution" in query_params:
+    pub_token = query_params["public_token"]
+    inst = query_params["institution"]
+    
+    with st.spinner("Exchanging public token and syncing sandbox data..."):
+        success = exchange_public_token(pub_token, inst)
+        if success:
+            st.success(f"{inst.upper()} successfully linked!")
+            # Clear parameters from URL and rerun
+            st.query_params.clear()
+            st.rerun()
+
+# --- Render Plaid Link Button ---
+def render_plaid_link(institution_code, label):
+    link_token = create_link_token(institution_code)
+    if not link_token:
         return
 
-    # If in mock mode or Plaid not configured, show simulated link button
-    status = get_backend_status()
-    if status.get("use_mock_data") or not status.get("is_plaid_configured"):
+    if link_token == "mock_link_token":
         if st.button(f"🔌 Connect {label} (Demo Link)", key=f"demo_btn_{institution_code}"):
             with st.spinner("Connecting bank account..."):
-                res = requests.post(f"{BACKEND_URL}/api/exchange_public_token", json={
-                    "public_token": "mock_public_token",
-                    "institution": institution_code
-                })
-                if res.status_code == 200:
-                    st.success(f"{label} successfully linked (Demo)!")
-                    st.rerun()
-                else:
-                    st.error("Simulation failed.")
+                exchange_public_token("mock_public_token", institution_code)
+                st.success(f"{label} successfully linked (Demo)!")
+                st.rerun()
         return
 
-    # Real Plaid Link iframe/component
+    # Real Plaid Link Iframe incorporating query parameter redirect
     plaid_html = f"""
     <div style="text-align: center; margin: 10px 0;">
         <button id="plaid-link-button" style="
@@ -153,21 +536,11 @@ def render_plaid_link(institution_code, label):
             const handler = Plaid.create({{
                 token: '{link_token}',
                 onSuccess: (public_token, metadata) => {{
-                    fetch('{BACKEND_URL}/api/exchange_public_token', {{
-                        method: 'POST',
-                        headers: {{ 'Content-Type': 'application/json' }},
-                        body: JSON.stringify({{
-                            public_token: public_token,
-                            institution: '{institution_code}'
-                        }})
-                    }}).then(response => response.json())
-                       .then(data => {{
-                           if (data.status === 'success') {{
-                               alert('{label} linked successfully! Click refresh on your dashboard.');
-                           }} else {{
-                               alert('Error linking account: ' + JSON.stringify(data));
-                           }}
-                       }});
+                    // Redirect the parent window to the Streamlit app URL with query parameters
+                    const targetUrl = window.parent.location.origin + window.parent.location.pathname + 
+                                      '?public_token=' + public_token + 
+                                      '&institution=' + '{institution_code}';
+                    window.parent.location.href = targetUrl;
                 }},
                 onExit: (err, metadata) => {{
                     if (err != null) {{
@@ -186,16 +559,17 @@ st.sidebar.markdown("<h2 style='text-align: center; color: #4e80e4;'>💸 Munyun
 st.sidebar.markdown("<p style='text-align: center; color: #9ca3af; font-size: 0.85rem;'>Personal Wealth Aggregator</p>", unsafe_allow_html=True)
 st.sidebar.markdown("---")
 
-status = get_backend_status()
-use_mock = status.get("use_mock_data", True)
-is_configured = status.get("is_plaid_configured", False)
+# Setup default mock values on initial startup
+accounts_check = database.get_accounts()
+if not accounts_check and USE_MOCK_DATA:
+    generate_mock_data()
 
-# Badges and Status
+# Status Display
 st.sidebar.subheader("Connection Status")
 boa_linked = database.get_credential("access_token_boa") is not None
 cashapp_linked = database.get_credential("access_token_cashapp") is not None
 
-if use_mock:
+if USE_MOCK_DATA:
     st.sidebar.markdown("Bank of America: <span class='badge-demo'>DEMO MODE</span>", unsafe_allow_html=True)
     st.sidebar.markdown("Cash App: <span class='badge-demo'>DEMO MODE</span>", unsafe_allow_html=True)
 else:
@@ -206,43 +580,27 @@ else:
 
 st.sidebar.markdown("---")
 
-# Settings & Mode Control
-st.sidebar.subheader("Settings")
+# Operations
+st.sidebar.subheader("Actions")
 
-# Mock Mode Toggle
-if not is_configured:
-    st.sidebar.info("Plaid API keys not found in `.env`. Running in Demo Mode.")
-    toggle_val = st.sidebar.checkbox("Demo Mode (Mock Data)", value=True, disabled=True)
-else:
-    mock_mode = st.sidebar.checkbox("Demo Mode (Mock Data)", value=use_mock)
-    if mock_mode != use_mock:
-        if toggle_mock_mode(mock_mode):
-            st.sidebar.success("Mode updated!")
-            st.rerun()
-
-# Sync Button
 if st.sidebar.button("🔄 Sync Account Data"):
     with st.spinner("Syncing..."):
-        if sync_data():
+        if sync_all():
             st.sidebar.success("Sync completed!")
             st.rerun()
-        else:
-            st.sidebar.error("Sync failed. Check backend.")
 
-# Reset/Clear Button (styled differently via CSS class)
 st.sidebar.markdown("<div class='clear-btn'>", unsafe_allow_html=True)
 if st.sidebar.button("⚠️ Disconnect & Clear All"):
-    if clear_data():
+    if clear_all_data():
         st.sidebar.success("All connections reset.")
         st.rerun()
 st.sidebar.markdown("</div>", unsafe_allow_html=True)
 
-# Budget Settings in Sidebar
+# Budgets Sidebar manager
 st.sidebar.markdown("---")
 st.sidebar.subheader("Manage Budgets")
 budgets = database.get_budgets()
 
-# Quick form to set budget
 with st.sidebar.form("budget_form"):
     budget_cat = st.selectbox("Category", ["Groceries", "Dining", "Subscriptions", "Transfers", "Shopping", "Utilities", "Travel"])
     current_limit = budgets.get(budget_cat, 200.0)
@@ -253,14 +611,19 @@ with st.sidebar.form("budget_form"):
         st.success(f"Budget for {budget_cat} set to ${budget_amt}")
         st.rerun()
 
-# --- Main Dashboard UI ---
+# Logout button
+st.sidebar.markdown("---")
+if st.sidebar.button("🔓 Logout"):
+    st.session_state.logged_in = False
+    st.session_state.login_time = None
+    st.rerun()
 
-# Check if we have accounts populated. If not, show connection page.
+# --- Main Dashboard ---
 accounts = database.get_accounts()
 
-if not accounts and not use_mock:
+if not accounts and not USE_MOCK_DATA:
     st.markdown("<h1>Link Your Financial Accounts</h1>", unsafe_allow_html=True)
-    st.write("To get started, secure link your Bank of America and Cash App accounts via Plaid.")
+    st.write("To get started, securely link your Bank of America and Cash App accounts via Plaid.")
     
     col1, col2 = st.columns(2)
     
@@ -283,13 +646,12 @@ if not accounts and not use_mock:
         render_plaid_link("cashapp", "Cash App")
         
     st.markdown("---")
-    st.write("💡 *Note: If you just want to evaluate the app, check the 'Demo Mode' checkbox in the sidebar.*")
+    st.write("💡 *Note: If you just want to evaluate the app, set USE_MOCK_DATA=True in your secrets.*")
 
 else:
-    # We have accounts, display dashboard!
+    # Render dashboard
     st.markdown("<h1>Munyun Financial Control</h1>", unsafe_allow_html=True)
     
-    # Tabs
     tab_overview, tab_txs, tab_cashapp, tab_budgets = st.tabs([
         "📊 Dashboard Overview", 
         "📝 Transaction Log", 
@@ -297,23 +659,18 @@ else:
         "🎯 Budget Planner"
     ])
     
-    # Gather Data
     txs = database.get_transactions()
     df_txs = pd.DataFrame(txs) if txs else pd.DataFrame(columns=["id", "date", "amount", "name", "category", "account_name", "institution", "notes", "pending"])
     
     if not df_txs.empty:
         df_txs['amount_clean'] = df_txs['amount']
-        # Convert date to datetime
         df_txs['date'] = pd.to_datetime(df_txs['date'])
-        # Sort
         df_txs = df_txs.sort_values(by="date", ascending=False)
         
     # --- Tab 1: Overview Dashboard ---
     with tab_overview:
-        # Calculate totals
         total_balance = sum(acc["balance_available"] for acc in accounts if acc["balance_available"] is not None)
         
-        # Dashboard Summary Row
         col_net, col_boa, col_ca = st.columns(3)
         
         with col_net:
@@ -345,14 +702,12 @@ else:
             </div>
             """, unsafe_allow_html=True)
             
-        # Graphical Analysis Section
         st.markdown("### Financial Analytics")
         col_chart1, col_chart2 = st.columns([1, 1])
         
         with col_chart1:
             st.markdown("#### Spending By Category (Last 30 Days)")
             if not df_txs.empty:
-                # Exclude income from spending chart. Expense amounts in Plaid are positive.
                 df_spending = df_txs[(df_txs['amount_clean'] > 0) & (df_txs['category'] != 'Income')]
                 if not df_spending.empty:
                     category_totals = df_spending.groupby('category')['amount_clean'].sum().reset_index()
@@ -380,16 +735,10 @@ else:
         with col_chart2:
             st.markdown("#### Cumulative Net Worth History")
             if not df_txs.empty:
-                # Sort transactions ascending to compute cumulative sum
                 df_sorted = df_txs.sort_values(by="date", ascending=True)
-                
-                # We start with the current total_balance, and backtrace daily changes
-                # In Plaid, positive is outflow (expense), negative is inflow (income/credit)
-                # Therefore, daily change = -amount
                 df_daily = df_sorted.groupby('date')['amount_clean'].sum().reset_index()
                 df_daily['daily_change'] = -df_daily['amount_clean']
                 
-                # Backtrace balances
                 balances = []
                 current_calc = total_balance
                 for idx, row in df_daily.iloc[::-1].iterrows():
@@ -419,7 +768,6 @@ else:
             else:
                 st.info("No history available.")
 
-        # Account List Details
         st.markdown("### Linked Accounts")
         for acc in accounts:
             mask_str = f"•••• {acc['mask']}" if acc['mask'] else ""
@@ -443,7 +791,6 @@ else:
         if df_txs.empty:
             st.info("No transactions found.")
         else:
-            # Filters
             col_f1, col_f2, col_f3 = st.columns(3)
             with col_f1:
                 search_term = st.text_input("🔍 Search Merchant / Name", "")
@@ -452,7 +799,6 @@ else:
             with col_f3:
                 inst_filter = st.selectbox("Institution Filter", ["All"] + list(df_txs['institution'].unique()))
                 
-            # Apply Filters
             df_filtered = df_txs.copy()
             if search_term:
                 df_filtered = df_filtered[df_filtered['name'].str.contains(search_term, case=False)]
@@ -461,22 +807,18 @@ else:
             if inst_filter != "All":
                 df_filtered = df_filtered[df_filtered['institution'] == inst_filter]
                 
-            # Display Table
             display_cols = ["date", "name", "category", "amount", "account_name", "institution", "notes"]
             df_display = df_filtered[display_cols].copy()
             
-            # Format display
             df_display['date'] = df_display['date'].dt.strftime('%Y-%m-%d')
             df_display['amount'] = df_display['amount'].apply(lambda x: f"${x:,.2f}" if x >= 0 else f"-${abs(x):,.2f}")
             df_display.columns = ["Date", "Merchant / Transaction", "Category", "Amount", "Account", "Institution", "Notes"]
             
             st.dataframe(df_display, use_container_width=True)
             
-            # Transaction Editing Panel (Custom categorization & Notes)
             st.markdown("---")
             st.markdown("### ✏️ Edit Transaction Details")
             
-            # Form to edit transaction
             selected_name = st.selectbox(
                 "Select a transaction to modify", 
                 options=df_filtered['name'].unique(),
@@ -484,7 +826,6 @@ else:
             )
             
             if selected_name:
-                # Find the transaction
                 selected_tx = df_filtered[df_filtered['name'] == selected_name].iloc[0]
                 
                 col_e1, col_e2 = st.columns(2)
@@ -510,14 +851,11 @@ else:
         st.markdown("### Cash App Transactions & P2P Transfers")
         st.write("This tab isolates Cash App accounts to track direct payments, deposits, and cash outs.")
         
-        # Filter for Cash App only
         df_ca = df_txs[df_txs['institution'].str.contains("Cash App", na=False)] if not df_txs.empty else pd.DataFrame()
         
         if df_ca.empty:
             st.info("No Cash App transactions found. Connect a Cash App account to sync transfers.")
         else:
-            # Split into sent vs received
-            # Plaid format: positive amount = spent/debit, negative amount = received/credit
             sent_total = df_ca[df_ca['amount_clean'] > 0]['amount_clean'].sum()
             received_total = abs(df_ca[df_ca['amount_clean'] < 0]['amount_clean'].sum())
             
@@ -547,7 +885,6 @@ else:
                 </div>
                 """, unsafe_allow_html=True)
                 
-            # Cash App Log
             st.markdown("#### Cash App Detailed History")
             df_ca_display = df_ca[["date", "name", "category", "amount"]].copy()
             df_ca_display['date'] = df_ca_display['date'].dt.strftime('%Y-%m-%d')
@@ -563,13 +900,9 @@ else:
         if df_txs.empty:
             st.info("Sync transactions to begin monitoring budgets.")
         else:
-            # Exclude income from spending totals
             df_spending = df_txs[(df_txs['amount_clean'] > 0) & (df_txs['category'] != 'Income')]
-            
-            # Map category spendings
             cat_spending = df_spending.groupby('category')['amount_clean'].sum().to_dict()
             
-            # Render budgets
             if not budgets:
                 st.info("No budgets configured yet. Use the sidebar to set category spending limits!")
             else:
@@ -577,18 +910,13 @@ else:
                     spent = cat_spending.get(cat, 0.0)
                     percent = min(spent / limit, 1.0) if limit > 0 else 0.0
                     
-                    # Colors
                     if percent < 0.70:
-                        prog_color = "normal"
                         status_text = f"<span style='color: #10b981; font-weight: 600;'>Under Budget</span>"
                     elif percent < 0.95:
-                        prog_color = "normal"
                         status_text = f"<span style='color: #fbbf24; font-weight: 600;'>Approaching Limit</span>"
                     else:
-                        prog_color = "normal"
                         status_text = f"<span style='color: #ef4444; font-weight: 600;'>OVER BUDGET</span>"
                         
-                    # Show progress bar and values
                     st.markdown(f"""
                     <div style="margin-top: 1rem; margin-bottom: 0.25rem; display: flex; justify-content: space-between;">
                         <span style="font-weight: 600; color: #f3f4f6;">{cat} Budget</span>

@@ -337,4 +337,100 @@ section[data-testid="stSidebar"] {
     }
 }
 
+/* --- Login Screen Styling --- */
+@keyframes login-fade-in {
+    0% {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.login-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 80vh;
+    width: 100%;
+}
+
+.login-card-container {
+    opacity: 0;
+    animation: login-fade-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.login-card-container.delayed-fade {
+    animation-delay: 2.3s; /* Delay to stagger with splash screen fade-out */
+}
+
+.login-card-container.instant-fade {
+    animation-delay: 0.1s; /* No delay on form submit reruns */
+}
+
+.login-card {
+    background: rgba(10, 10, 10, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(78, 128, 228, 0.2);
+    border-radius: 20px;
+    padding: 2.5rem 2rem;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.9), 0 0 50px rgba(78, 128, 228, 0.05);
+    text-align: center;
+}
+
+.login-title {
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.login-subtitle {
+    color: #9ca3af;
+    font-size: 0.9rem;
+    margin-bottom: 2rem;
+}
+
+/* Style the Streamlit form to act as the glassmorphic login card */
+div[data-testid="stForm"] {
+    background: rgba(10, 10, 10, 0.85) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(78, 128, 228, 0.2) !important;
+    border-radius: 20px !important;
+    padding: 2.5rem 2rem !important;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.9), 0 0 50px rgba(78, 128, 228, 0.05) !important;
+    max-width: 400px !important;
+    margin: 0 auto !important;
+    animation: login-fade-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Match container timing with parent wrappers */
+.delayed-fade + div[data-testid="stForm"] {
+    animation-delay: 2.3s;
+}
+
+.instant-fade + div[data-testid="stForm"] {
+    animation-delay: 0.1s;
+}
+
+/* Center Form elements and remove default borders */
+div[data-testid="stForm"] {
+    border: 1px solid rgba(78, 128, 228, 0.2) !important;
+}
+
+div[data-testid="stForm"] label p {
+    color: #9ca3af !important;
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+
+
 
