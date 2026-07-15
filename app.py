@@ -233,20 +233,20 @@ if not st.session_state.logged_in:
                             else:
                                 cleaned_num = clean_phone_number(phone_input)
                                 if cleaned_num in ALLOWED_PHONE_NUMBERS:
-                                code = str(random.randint(100000, 999999))
-                                st.session_state.sms_code = code
-                                st.session_state.sms_phone = cleaned_num
-                                st.session_state.sms_sent = True
-                                
-                                sent = send_twilio_sms(cleaned_num, code)
-                                if sent:
-                                    st.success("Verification code sent successfully via SMS!")
+                                    code = str(random.randint(100000, 999999))
+                                    st.session_state.sms_code = code
+                                    st.session_state.sms_phone = cleaned_num
+                                    st.session_state.sms_sent = True
+                                    
+                                    sent = send_twilio_sms(cleaned_num, code)
+                                    if sent:
+                                        st.success("Verification code sent successfully via SMS!")
+                                    else:
+                                        st.success("Verification code generated!")
+                                        st.info(f"🔑 [DEMO MODE] SMS Code: {code}")
+                                    st.rerun()
                                 else:
-                                    st.success("Verification code generated!")
-                                    st.info(f"🔑 [DEMO MODE] SMS Code: {code}")
-                                st.rerun()
-                            else:
-                                st.error(f"Phone number {cleaned_num} not authorized. Allowed list: {ALLOWED_PHONE_NUMBERS}")
+                                    st.error(f"Phone number {cleaned_num} not authorized. Allowed list: {ALLOWED_PHONE_NUMBERS}")
                 else:
                     with st.form("sms_verify_form", clear_on_submit=False):
                         st.write(f"Code sent to **{st.session_state.sms_phone}**")
