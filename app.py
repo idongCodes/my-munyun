@@ -128,38 +128,35 @@ ALLOWED_PHONE_NUMBERS = [
 ]
 
 # --- Restoration & Synchronization of Browser Tab Sessions ---
+# Declare local custom session_restorer component
+component_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".session_component")
+session_restorer = st.components.v1.declare_component("session_restorer", path=component_path)
+
 # 1. Clear session storage if manual logout was triggered
 if st.session_state.get('clear_storage', False):
-    st.markdown('<img src="x" onerror="try{sessionStorage.removeItem(\'munyun_logged_in\');sessionStorage.removeItem(\'munyun_login_time\');}catch(e){}" style="display:none;" />', unsafe_allow_html=True)
+    session_restorer(action="clear")
     st.session_state.clear_storage = False
 
-# 2. Check URL query parameters for session restore (F5 refresh redirect)
-query_params = st.query_params
-if "session_login" in query_params and "login_time" in query_params:
-    try:
-        login_time_str = query_params["login_time"]
-        login_time = datetime.datetime.fromisoformat(login_time_str)
-        # Validate 72-hour session lifespan
-        elapsed = datetime.datetime.now() - login_time
-        if elapsed.total_seconds() <= 72 * 3600:
-            st.session_state.logged_in = True
-            st.session_state.login_time = login_time
-            st.session_state.splash_shown = True # Skip splash screen on reload restore
-        st.query_params.clear()
-        st.rerun()
-    except Exception:
-        st.query_params.clear()
-
-# 3. If python session state is not logged in, check browser tab sessionStorage
+# 2. Check browser tab sessionStorage if python session state is not logged in
 if not st.session_state.get('logged_in', False) and not st.session_state.get('setup_mfa', False):
-    if 'session_checked' not in st.session_state:
-        st.markdown('<img src="x" onerror="try{const li=sessionStorage.getItem(\'munyun_logged_in\');const lt=sessionStorage.getItem(\'munyun_login_time\');if(li===\'true\'&&lt){const diffHours=(new Date()-new Date(lt))/(1000*60*60);if(diffHours<=72){window.location.href=window.location.href.split(\'?\')[0]+\'?session_login=true&login_time=\'+encodeURIComponent(lt);}}}catch(e){}" style="display:none;" />', unsafe_allow_html=True)
-        st.session_state.session_checked = True
+    session_data = session_restorer(action="read")
+    if session_data and session_data.get("loggedIn"):
+        try:
+            login_time = datetime.datetime.fromisoformat(session_data.get("loginTime"))
+            # Validate 72-hour session lifespan
+            elapsed = datetime.datetime.now() - login_time
+            if elapsed.total_seconds() <= 72 * 3600:
+                st.session_state.logged_in = True
+                st.session_state.login_time = login_time
+                st.session_state.splash_shown = True # Skip splash screen on reload restore
+                st.rerun()
+        except Exception:
+            pass
 
-# 4. If logged in, ensure state is written/updated in sessionStorage
+# 3. If logged in, ensure state is written/updated in sessionStorage
 if st.session_state.get('logged_in', False) and 'login_time' in st.session_state:
     login_iso = st.session_state.login_time.isoformat()
-    st.markdown(f'<img src="x" onerror="try{{sessionStorage.setItem(\'munyun_logged_in\',\'true\');sessionStorage.setItem(\'munyun_login_time\',\'{login_iso}\');}}catch(e){{}}" style="display:none;" />', unsafe_allow_html=True)
+    session_restorer(action="write", loginTime=login_iso)
 
 # --- Authentication & Multi-Factor System State Init ---
 if 'logged_in' not in st.session_state:
