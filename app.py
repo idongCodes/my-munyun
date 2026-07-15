@@ -242,7 +242,7 @@ if not st.session_state.logged_in:
                                     st.info(f"🔑 [DEMO MODE] SMS Code: {code}")
                                 st.rerun()
                             else:
-                                st.error(f"Phone number not authorized.")
+                                st.error(f"Phone number {cleaned_num} not authorized. Allowed list: {ALLOWED_PHONE_NUMBERS}")
                 else:
                     with st.form("sms_verify_form", clear_on_submit=False):
                         st.write(f"Code sent to **{st.session_state.sms_phone}**")
