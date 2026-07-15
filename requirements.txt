@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+streamlit
+plaid-python>=22.0.0
+python-dotenv
+pandas
+plotly
+requests
+pydantic
+cryptography
