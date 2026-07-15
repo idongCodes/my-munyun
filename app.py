@@ -81,38 +81,118 @@ if not is_plaid_configured:
     # If Plaid is not configured, force mock data mode
     USE_MOCK_DATA = True
 
-APP_PASSWORD = get_config("APP_PASSWORD", "admin")
+import pyotp
+import urllib.parse
 
-# --- Authentication System ---
+APP_PASSWORD = get_config("APP_PASSWORD", "admin")
+TOTP_SECRET = get_config("TOTP_SECRET", "")
+
+# --- Authentication & Multi-Factor System ---
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
+if 'setup_mfa' not in st.session_state:
+    st.session_state.setup_mfa = False
 
 if not st.session_state.logged_in:
     fade_class = "delayed-fade" if just_shown_splash else "instant-fade"
-    
     st.markdown(f'<div class="{fade_class}">', unsafe_allow_html=True)
     
     col_space1, col_login, col_space2 = st.columns([1, 1.3, 1])
     with col_login:
         st.markdown(f"""
-        <div style="text-align: center; margin-top: 10vh; margin-bottom: 20px;">
+        <div style="text-align: center; margin-top: 8vh; margin-bottom: 20px;">
             <div class="login-title"><span style="color: #4e80e4;">💸</span> Munyun</div>
             <div class="login-subtitle">Secure Wealth Portal</div>
         </div>
         """, unsafe_allow_html=True)
         
-        with st.form("login_form", clear_on_submit=False):
-            password = st.text_input("Passcode", type="password", placeholder="••••")
-            submit = st.form_submit_button("Authenticate")
+        # 1. Google Authenticator Setup Wizard
+        if st.session_state.setup_mfa:
+            st.markdown("### 🔒 Setup 2FA (Google Authenticator)")
+            st.write("Scan the QR code below using your Google Authenticator app on your phone, then enter the verification code.")
             
-            if submit:
-                if password == APP_PASSWORD:
-                    st.session_state.logged_in = True
-                    st.success("Authenticated!")
-                    st.rerun()
-                else:
-                    st.error("Incorrect passcode. Please try again.")
-                    
+            # Generate temporary base32 secret if not already set
+            if 'temp_totp_secret' not in st.session_state:
+                st.session_state.temp_totp_secret = pyotp.random_base32()
+                
+            temp_secret = st.session_state.temp_totp_secret
+            
+            # Create provisioning URI for Authenticator scan
+            totp = pyotp.TOTP(temp_secret)
+            # Use 'Munyun:idongcodes' as label
+            provisioning_uri = totp.provisioning_uri(name="idongcodes", issuer_name="Munyun")
+            
+            # Use QR code generator API to display image
+            qr_api_url = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={urllib.parse.quote(provisioning_uri)}&color=4e80e4&bgcolor=000000"
+            
+            # Display QR Code centered
+            st.markdown(f'<div style="text-align: center; margin: 15px 0;"><img src="{qr_api_url}" style="border: 4px solid #111827; border-radius: 12px;" /></div>', unsafe_allow_html=True)
+            
+            st.code(f"Secret Key: {temp_secret}", language="text")
+            
+            with st.form("verify_totp_form", clear_on_submit=False):
+                verify_code = st.text_input("Enter 6-digit Verification Code", placeholder="000 000")
+                verify_submit = st.form_submit_button("Verify & Activate")
+                
+                if verify_submit:
+                    # Clean whitespaces
+                    clean_code = verify_code.replace(" ", "")
+                    if totp.verify(clean_code):
+                        st.success("🎉 Google Authenticator verification successful!")
+                        st.markdown(f"""
+                        > [!IMPORTANT]
+                        > **Save this secret to complete setup:**
+                        > Add this variable to your `.env` file (or your Streamlit Cloud secrets):
+                        > ```env
+                        > TOTP_SECRET={temp_secret}
+                        > ```
+                        """)
+                        if st.form_submit_button("Proceed to Dashboard"):
+                            st.session_state.logged_in = True
+                            st.session_state.setup_mfa = False
+                            st.rerun()
+                    else:
+                        st.error("Invalid verification code. Please check your authenticator app and try again.")
+            
+            if st.button("Cancel & Go Back"):
+                st.session_state.setup_mfa = False
+                st.rerun()
+                
+        # 2. Authenticator login (if TOTP_SECRET is configured)
+        elif TOTP_SECRET:
+            with st.form("totp_login_form", clear_on_submit=False):
+                totp_code = st.text_input("Google Authenticator Code", type="default", placeholder="000 000")
+                totp_submit = st.form_submit_button("Unlock Portal")
+                
+                if totp_submit:
+                    clean_code = totp_code.replace(" ", "")
+                    totp = pyotp.TOTP(TOTP_SECRET)
+                    if totp.verify(clean_code):
+                        st.session_state.logged_in = True
+                        st.success("Access Granted!")
+                        st.rerun()
+                    else:
+                        st.error("Invalid Authenticator code. Please check your app.")
+                        
+        # 3. Standard password login (if TOTP_SECRET is not configured)
+        else:
+            with st.form("login_form", clear_on_submit=False):
+                password = st.text_input("Passcode", type="password", placeholder="••••")
+                submit = st.form_submit_button("Authenticate")
+                
+                if submit:
+                    if password == APP_PASSWORD:
+                        st.session_state.logged_in = True
+                        st.success("Authenticated!")
+                        st.rerun()
+                    else:
+                        st.error("Incorrect passcode. Please try again.")
+            
+            st.markdown("<p style='text-align: center; margin-top: 10px;'>- or -</p>", unsafe_allow_html=True)
+            if st.button("🛡️ Setup Google Authenticator 2FA"):
+                st.session_state.setup_mfa = True
+                st.rerun()
+                
         st.markdown("""
         <p style="text-align: center; color: #4b5563; font-size: 0.8rem; margin-top: 15px; font-family: 'Plus Jakarta Sans', sans-serif;">
             Protected by AES-256 local database encryption.

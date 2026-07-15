@@ -8,3 +8,4 @@ plotly
 requests
 pydantic
 cryptography
+pyotp
