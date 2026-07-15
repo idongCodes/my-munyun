@@ -26,6 +26,15 @@ import database
 # Load environment variables (locally)
 load_dotenv()
 
+# Reset the DeltaGenerator stack and container attributes to prevent Streamlit AppTest state pollution bugs
+try:
+    from streamlit.elements.lib.form_utils import context_dg_stack
+    context_dg_stack.set([])
+    st.sidebar._form_data = None
+    st._main._form_data = None
+except Exception:
+    pass
+
 # Page Configuration
 st.set_page_config(
     page_title="Munyun - Personal Finance Dashboard",
@@ -61,15 +70,7 @@ if 'splash_shown' not in st.session_state:
     st.session_state.splash_shown = True
     just_shown_splash = True
 
-# --- Config and Plaid Client Initialization ---
-def get_config(key, default=""):
-    # First check Streamlit Cloud Secrets, then fallback to local env
-    try:
-        if key in st.secrets:
-            return st.secrets[key]
-    except Exception:
-        pass
-    return os.getenv(key, default)
+from helpers import get_config, clean_phone_number, send_twilio_sms
 
 PLAID_CLIENT_ID = get_config("PLAID_CLIENT_ID")
 PLAID_SECRET = get_config("PLAID_SECRET")
@@ -85,39 +86,6 @@ import pyotp
 import urllib.parse
 import re
 import requests
-
-def clean_phone_number(phone_str):
-    # Remove all non-digits
-    digits = re.sub(r'\D', '', phone_str)
-    if len(digits) == 10:
-        return "+1" + digits
-    elif len(digits) == 11 and digits.startswith("1"):
-        return "+" + digits
-    elif len(digits) > 10:
-        return "+" + digits
-    return "+" + digits  # fallback
-
-def send_twilio_sms(to_number, code):
-    account_sid = get_config("TWILIO_ACCOUNT_SID")
-    auth_token = get_config("TWILIO_AUTH_TOKEN")
-    from_number = get_config("TWILIO_PHONE_NUMBER")
-    
-    if not (account_sid and auth_token and from_number):
-        return False
-        
-    try:
-        from requests.auth import HTTPBasicAuth
-        url = f"https://api.twilio.com/2010-04-01/Accounts/{account_sid}/Messages.json"
-        data = {
-            "To": to_number,
-            "From": from_number,
-            "Body": f"Your Munyun Verification Code is: {code}"
-        }
-        r = requests.post(url, data=data, auth=HTTPBasicAuth(account_sid, auth_token), timeout=5)
-        return r.status_code == 201
-    except Exception as e:
-        st.error(f"Failed to send SMS via Twilio: {e}")
-        return False
 
 APP_PASSWORD = get_config("APP_PASSWORD", "admin")
 TOTP_SECRET = get_config("TOTP_SECRET", "")
@@ -180,6 +148,16 @@ if st.session_state.logged_in and 'login_time' in st.session_state:
         st.rerun()
 
 if not st.session_state.logged_in:
+    # Initialize state transition flags
+    login_success = False
+    totp_success = False
+    sms_request_success = False
+    sms_verify_success = False
+    proceed_success = False
+    setup_mfa_cancel = False
+    setup_mfa_trigger = False
+    sms_resend = False
+
     fade_class = "delayed-fade" if just_shown_splash else "instant-fade"
     st.markdown(f'<div class="{fade_class}">', unsafe_allow_html=True)
     
@@ -216,34 +194,33 @@ if not st.session_state.logged_in:
             
             st.code(f"Secret Key: {temp_secret}", language="text")
             
+            setup_success = False
             with st.form("verify_totp_form", clear_on_submit=False):
                 verify_code = st.text_input("Enter 6-digit Verification Code", placeholder="000 000")
                 verify_submit = st.form_submit_button("Verify & Activate")
                 
                 if verify_submit:
-                    # Clean whitespaces
                     clean_code = verify_code.replace(" ", "")
                     if totp.verify(clean_code):
-                        st.success("🎉 Google Authenticator verification successful!")
-                        st.markdown(f"""
-                        > [!IMPORTANT]
-                        > **Save this secret to complete setup:**
-                        > Add this variable to your `.env` file (or your Streamlit Cloud secrets):
-                        > ```env
-                        > TOTP_SECRET={temp_secret}
-                        > ```
-                        """)
-                        if st.form_submit_button("Proceed to Dashboard"):
-                            st.session_state.logged_in = True
-                            st.session_state.login_time = datetime.datetime.now()
-                            st.session_state.setup_mfa = False
-                            st.rerun()
+                        setup_success = True
                     else:
                         st.error("Invalid verification code. Please check your authenticator app and try again.")
             
+            if setup_success:
+                st.success("🎉 Google Authenticator verification successful!")
+                st.markdown(f"""
+                > [!IMPORTANT]
+                > **Save this secret to complete setup:**
+                > Add this variable to your `.env` file (or your Streamlit Cloud secrets):
+                > ```env
+                > TOTP_SECRET={temp_secret}
+                > ```
+                """)
+                if st.button("Proceed to Dashboard"):
+                    proceed_success = True
+            
             if st.button("Cancel & Go Back"):
-                st.session_state.setup_mfa = False
-                st.rerun()
+                setup_mfa_cancel = True
                 
         # 2. Login Flow Selection
         else:
@@ -275,7 +252,7 @@ if not st.session_state.logged_in:
                                     else:
                                         st.success("Verification code generated!")
                                         st.info(f"🔑 [DEMO MODE] SMS Code: {code}")
-                                    st.rerun()
+                                    sms_request_success = True
                                 else:
                                     st.error(f"Phone number {cleaned_num} not authorized. Allowed list: {ALLOWED_PHONE_NUMBERS}")
                 else:
@@ -287,21 +264,12 @@ if not st.session_state.logged_in:
                         if verify_btn:
                             clean_input = code_input.replace(" ", "")
                             if clean_input == st.session_state.sms_code:
-                                st.session_state.logged_in = True
-                                st.session_state.login_time = datetime.datetime.now()
-                                st.session_state.sms_sent = False
-                                st.session_state.sms_code = None
-                                st.session_state.sms_phone = None
-                                st.success("Access Granted!")
-                                st.rerun()
+                                sms_verify_success = True
                             else:
                                 st.error("Invalid verification code. Please try again.")
                                 
                     if st.button("Resend Code / Change Number"):
-                        st.session_state.sms_sent = False
-                        st.session_state.sms_code = None
-                        st.session_state.sms_phone = None
-                        st.rerun()
+                        sms_resend = True
             
             # --- Google Authenticator Code Flow ---
             elif login_method == "Authenticator Code":
@@ -313,10 +281,7 @@ if not st.session_state.logged_in:
                         clean_code = totp_code.replace(" ", "")
                         totp = pyotp.TOTP(TOTP_SECRET)
                         if totp.verify(clean_code):
-                            st.session_state.logged_in = True
-                            st.session_state.login_time = datetime.datetime.now()
-                            st.success("Access Granted!")
-                            st.rerun()
+                            totp_success = True
                         else:
                             st.error("Invalid Authenticator code. Please check your app.")
             
@@ -328,17 +293,13 @@ if not st.session_state.logged_in:
                     
                     if submit:
                         if password == APP_PASSWORD:
-                            st.session_state.logged_in = True
-                            st.session_state.login_time = datetime.datetime.now()
-                            st.success("Authenticated!")
-                            st.rerun()
+                            login_success = True
                         else:
                             st.error("Incorrect passcode. Please try again.")
                 
                 st.markdown("<p style='text-align: center; margin-top: 10px;'>- or -</p>", unsafe_allow_html=True)
                 if st.button("🛡️ Setup Google Authenticator 2FA"):
-                    st.session_state.setup_mfa = True
-                    st.rerun()
+                    setup_mfa_trigger = True
                 
         st.markdown("""
         <p style="text-align: center; color: #4b5563; font-size: 0.8rem; margin-top: 15px; font-family: 'Plus Jakarta Sans', sans-serif;">
@@ -347,6 +308,30 @@ if not st.session_state.logged_in:
         """, unsafe_allow_html=True)
         
     st.markdown('</div>', unsafe_allow_html=True)
+    
+    # --- Defer Reruns and Execution Stops Outside All Form & Column Contexts ---
+    if login_success or totp_success or sms_verify_success or proceed_success:
+        st.session_state.logged_in = True
+        st.session_state.login_time = datetime.datetime.now()
+        if proceed_success:
+            st.session_state.setup_mfa = False
+        if sms_verify_success:
+            st.session_state.sms_sent = False
+            st.session_state.sms_code = None
+            st.session_state.sms_phone = None
+        st.rerun()
+        
+    if sms_request_success or sms_resend:
+        if sms_resend:
+            st.session_state.sms_sent = False
+            st.session_state.sms_code = None
+            st.session_state.sms_phone = None
+        st.rerun()
+        
+    if setup_mfa_cancel or setup_mfa_trigger:
+        st.session_state.setup_mfa = bool(setup_mfa_trigger)
+        st.rerun()
+        
     st.stop()
 
 
@@ -717,6 +702,8 @@ st.sidebar.markdown("---")
 
 # Operations
 st.sidebar.subheader("Actions")
+
+
 
 if st.sidebar.button("🔄 Sync Account Data"):
     with st.spinner("Syncing..."):
