@@ -93,6 +93,15 @@ if 'logged_in' not in st.session_state:
 if 'setup_mfa' not in st.session_state:
     st.session_state.setup_mfa = False
 
+# Auto-logout after 72 hours
+if st.session_state.logged_in and 'login_time' in st.session_state:
+    elapsed = datetime.datetime.now() - st.session_state.login_time
+    if elapsed.total_seconds() > 72 * 3600:
+        st.session_state.logged_in = False
+        st.session_state.login_time = None
+        st.session_state.splash_shown = False
+        st.rerun()
+
 if not st.session_state.logged_in:
     fade_class = "delayed-fade" if just_shown_splash else "instant-fade"
     st.markdown(f'<div class="{fade_class}">', unsafe_allow_html=True)
@@ -149,6 +158,7 @@ if not st.session_state.logged_in:
                         """)
                         if st.form_submit_button("Proceed to Dashboard"):
                             st.session_state.logged_in = True
+                            st.session_state.login_time = datetime.datetime.now()
                             st.session_state.setup_mfa = False
                             st.rerun()
                     else:
@@ -169,6 +179,7 @@ if not st.session_state.logged_in:
                     totp = pyotp.TOTP(TOTP_SECRET)
                     if totp.verify(clean_code):
                         st.session_state.logged_in = True
+                        st.session_state.login_time = datetime.datetime.now()
                         st.success("Access Granted!")
                         st.rerun()
                     else:
@@ -183,6 +194,7 @@ if not st.session_state.logged_in:
                 if submit:
                     if password == APP_PASSWORD:
                         st.session_state.logged_in = True
+                        st.session_state.login_time = datetime.datetime.now()
                         st.success("Authenticated!")
                         st.rerun()
                     else:
@@ -598,6 +610,13 @@ with st.sidebar.form("budget_form"):
         database.save_budget(budget_cat, budget_amt)
         st.success(f"Budget for {budget_cat} set to ${budget_amt}")
         st.rerun()
+
+# Logout button
+st.sidebar.markdown("---")
+if st.sidebar.button("🔓 Logout"):
+    st.session_state.logged_in = False
+    st.session_state.login_time = None
+    st.rerun()
 
 # --- Main Dashboard ---
 accounts = database.get_accounts()
