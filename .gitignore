@@ -1,0 +1,18 @@
+# Python virtual environment
+.venv/
+__pycache__/
+*.pyc
+
+# Local Database
+data.db
+
+# Secrets / Environment files
+.env
+
+# Streamlit config (if any)
+.streamlit/
+
+# Agent skills (environment symlinks)
+.agents/
+.claude/
+
