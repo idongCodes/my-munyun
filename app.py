@@ -83,15 +83,61 @@ if not is_plaid_configured:
 
 import pyotp
 import urllib.parse
+import re
+import requests
+
+def clean_phone_number(phone_str):
+    # Remove all non-digits
+    digits = re.sub(r'\D', '', phone_str)
+    if len(digits) == 10:
+        return "+1" + digits
+    elif len(digits) == 11 and digits.startswith("1"):
+        return "+" + digits
+    elif len(digits) > 10:
+        return "+" + digits
+    return "+" + digits  # fallback
+
+def send_twilio_sms(to_number, code):
+    account_sid = get_config("TWILIO_ACCOUNT_SID")
+    auth_token = get_config("TWILIO_AUTH_TOKEN")
+    from_number = get_config("TWILIO_PHONE_NUMBER")
+    
+    if not (account_sid and auth_token and from_number):
+        return False
+        
+    try:
+        from requests.auth import HTTPBasicAuth
+        url = f"https://api.twilio.com/2010-04-01/Accounts/{account_sid}/Messages.json"
+        data = {
+            "To": to_number,
+            "From": from_number,
+            "Body": f"Your Munyun Verification Code is: {code}"
+        }
+        r = requests.post(url, data=data, auth=HTTPBasicAuth(account_sid, auth_token), timeout=5)
+        return r.status_code == 201
+    except Exception as e:
+        st.error(f"Failed to send SMS via Twilio: {e}")
+        return False
 
 APP_PASSWORD = get_config("APP_PASSWORD", "admin")
 TOTP_SECRET = get_config("TOTP_SECRET", "")
+ALLOWED_PHONE_NUMBERS = [
+    clean_phone_number(n.strip())
+    for n in get_config("ALLOWED_PHONE_NUMBERS", "+17743126471").split(",")
+    if n.strip()
+]
 
 # --- Authentication & Multi-Factor System ---
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 if 'setup_mfa' not in st.session_state:
     st.session_state.setup_mfa = False
+if 'sms_sent' not in st.session_state:
+    st.session_state.sms_sent = False
+if 'sms_code' not in st.session_state:
+    st.session_state.sms_code = None
+if 'sms_phone' not in st.session_state:
+    st.session_state.sms_phone = None
 
 # Auto-logout after 72 hours
 if st.session_state.logged_in and 'login_time' in st.session_state:
@@ -168,42 +214,96 @@ if not st.session_state.logged_in:
                 st.session_state.setup_mfa = False
                 st.rerun()
                 
-        # 2. Authenticator login (if TOTP_SECRET is configured)
-        elif TOTP_SECRET:
-            with st.form("totp_login_form", clear_on_submit=False):
-                totp_code = st.text_input("Google Authenticator Code", type="default", placeholder="000 000")
-                totp_submit = st.form_submit_button("Unlock Portal")
-                
-                if totp_submit:
-                    clean_code = totp_code.replace(" ", "")
-                    totp = pyotp.TOTP(TOTP_SECRET)
-                    if totp.verify(clean_code):
-                        st.session_state.logged_in = True
-                        st.session_state.login_time = datetime.datetime.now()
-                        st.success("Access Granted!")
-                        st.rerun()
-                    else:
-                        st.error("Invalid Authenticator code. Please check your app.")
-                        
-        # 3. Standard password login (if TOTP_SECRET is not configured)
+        # 2. Login Flow Selection
         else:
-            with st.form("login_form", clear_on_submit=False):
-                password = st.text_input("Passcode", type="password", placeholder="••••")
-                submit = st.form_submit_button("Authenticate")
-                
-                if submit:
-                    if password == APP_PASSWORD:
-                        st.session_state.logged_in = True
-                        st.session_state.login_time = datetime.datetime.now()
-                        st.success("Authenticated!")
-                        st.rerun()
-                    else:
-                        st.error("Incorrect passcode. Please try again.")
+            auth_methods = ["Authenticator Code", "SMS Verification"] if TOTP_SECRET else ["Passcode Login", "SMS Verification"]
+            login_method = st.selectbox("Authentication Method", auth_methods)
             
-            st.markdown("<p style='text-align: center; margin-top: 10px;'>- or -</p>", unsafe_allow_html=True)
-            if st.button("🛡️ Setup Google Authenticator 2FA"):
-                st.session_state.setup_mfa = True
-                st.rerun()
+            # --- SMS Verification Flow ---
+            if login_method == "SMS Verification":
+                if not st.session_state.sms_sent:
+                    with st.form("sms_request_form", clear_on_submit=False):
+                        phone_input = st.text_input("Phone Number", placeholder="+1 (774) 312 6471")
+                        send_btn = st.form_submit_button("Send Code")
+                        
+                        if send_btn:
+                            cleaned_num = clean_phone_number(phone_input)
+                            if cleaned_num in ALLOWED_PHONE_NUMBERS:
+                                code = str(random.randint(100000, 999999))
+                                st.session_state.sms_code = code
+                                st.session_state.sms_phone = cleaned_num
+                                st.session_state.sms_sent = True
+                                
+                                sent = send_twilio_sms(cleaned_num, code)
+                                if sent:
+                                    st.success("Verification code sent successfully via SMS!")
+                                else:
+                                    st.success("Verification code generated!")
+                                    st.info(f"🔑 [DEMO MODE] SMS Code: {code}")
+                                st.rerun()
+                            else:
+                                st.error(f"Phone number not authorized.")
+                else:
+                    with st.form("sms_verify_form", clear_on_submit=False):
+                        st.write(f"Code sent to **{st.session_state.sms_phone}**")
+                        code_input = st.text_input("Enter 6-digit SMS Code", placeholder="000 000")
+                        verify_btn = st.form_submit_button("Unlock Portal")
+                        
+                        if verify_btn:
+                            clean_input = code_input.replace(" ", "")
+                            if clean_input == st.session_state.sms_code:
+                                st.session_state.logged_in = True
+                                st.session_state.login_time = datetime.datetime.now()
+                                st.session_state.sms_sent = False
+                                st.session_state.sms_code = None
+                                st.session_state.sms_phone = None
+                                st.success("Access Granted!")
+                                st.rerun()
+                            else:
+                                st.error("Invalid verification code. Please try again.")
+                                
+                    if st.button("Resend Code / Change Number"):
+                        st.session_state.sms_sent = False
+                        st.session_state.sms_code = None
+                        st.session_state.sms_phone = None
+                        st.rerun()
+            
+            # --- Google Authenticator Code Flow ---
+            elif login_method == "Authenticator Code":
+                with st.form("totp_login_form", clear_on_submit=False):
+                    totp_code = st.text_input("Google Authenticator Code", placeholder="000 000")
+                    totp_submit = st.form_submit_button("Unlock Portal")
+                    
+                    if totp_submit:
+                        clean_code = totp_code.replace(" ", "")
+                        totp = pyotp.TOTP(TOTP_SECRET)
+                        if totp.verify(clean_code):
+                            st.session_state.logged_in = True
+                            st.session_state.login_time = datetime.datetime.now()
+                            st.success("Access Granted!")
+                            st.rerun()
+                        else:
+                            st.error("Invalid Authenticator code. Please check your app.")
+            
+            # --- Standard Passcode Flow ---
+            else:
+                with st.form("login_form", clear_on_submit=False):
+                    password = st.text_input("Passcode", type="password", placeholder="••••")
+                    submit = st.form_submit_button("Authenticate")
+                    
+                    if submit:
+                        if password == APP_PASSWORD:
+                            st.session_state.logged_in = True
+                            st.session_state.login_time = datetime.datetime.now()
+                            st.success("Authenticated!")
+                            st.rerun()
+                        else:
+                            st.error("Incorrect passcode. Please try again.")
+                
+                st.markdown("<p style='text-align: center; margin-top: 10px;'>- or -</p>", unsafe_allow_html=True)
+                if st.button("🛡️ Setup Google Authenticator 2FA"):
+                    st.session_state.setup_mfa = True
+                    st.rerun()
                 
         st.markdown("""
         <p style="text-align: center; color: #4b5563; font-size: 0.8rem; margin-top: 15px; font-family: 'Plus Jakarta Sans', sans-serif;">
