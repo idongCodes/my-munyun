@@ -62,8 +62,11 @@ if 'splash_shown' not in st.session_state:
 # --- Config and Plaid Client Initialization ---
 def get_config(key, default=""):
     # First check Streamlit Cloud Secrets, then fallback to local env
-    if key in st.secrets:
-        return st.secrets[key]
+    try:
+        if key in st.secrets:
+            return st.secrets[key]
+    except Exception:
+        pass
     return os.getenv(key, default)
 
 PLAID_CLIENT_ID = get_config("PLAID_CLIENT_ID")
