@@ -127,7 +127,80 @@ ALLOWED_PHONE_NUMBERS = [
     if n.strip()
 ]
 
-# --- Authentication & Multi-Factor System ---
+# --- Restoration & Synchronization of Browser Tab Sessions ---
+# 1. Clear session storage if manual logout was triggered
+if st.session_state.get('clear_storage', False):
+    js_clear = """
+    <script>
+        try {
+            sessionStorage.removeItem("munyun_logged_in");
+            sessionStorage.removeItem("munyun_login_time");
+        } catch (e) {
+            console.error("Failed to clear sessionStorage:", e);
+        }
+    </script>
+    """
+    st.components.v1.html(js_clear, height=0, width=0)
+    st.session_state.clear_storage = False
+
+# 2. Check URL query parameters for session restore (F5 refresh redirect)
+query_params = st.query_params
+if "session_login" in query_params and "login_time" in query_params:
+    try:
+        login_time_str = query_params["login_time"]
+        login_time = datetime.datetime.fromisoformat(login_time_str)
+        # Validate 72-hour session lifespan
+        elapsed = datetime.datetime.now() - login_time
+        if elapsed.total_seconds() <= 72 * 3600:
+            st.session_state.logged_in = True
+            st.session_state.login_time = login_time
+            st.session_state.splash_shown = True # Skip splash screen on reload restore
+        st.query_params.clear()
+        st.rerun()
+    except Exception:
+        st.query_params.clear()
+
+# 3. If python session state is not logged in, check browser tab sessionStorage
+if not st.session_state.get('logged_in', False) and not st.session_state.get('setup_mfa', False):
+    js_read = """
+    <script>
+        try {
+            const loggedIn = sessionStorage.getItem("munyun_logged_in");
+            const loginTime = sessionStorage.getItem("munyun_login_time");
+            if (loggedIn === "true" && loginTime) {
+                const loginDate = new Date(loginTime);
+                const diffMs = new Date() - loginDate;
+                const diffHours = diffMs / (1000 * 60 * 60);
+                if (diffHours <= 72) {
+                    const currentUrl = window.parent.location.href.split('?')[0];
+                    const restoreUrl = currentUrl + '?session_login=true&login_time=' + encodeURIComponent(loginTime);
+                    window.parent.location.href = restoreUrl;
+                }
+            }
+        } catch (e) {
+            console.error("Failed to read sessionStorage:", e);
+        }
+    </script>
+    """
+    if 'session_checked' not in st.session_state:
+        st.components.v1.html(js_read, height=0, width=0)
+        st.session_state.session_checked = True
+
+# 4. If logged in, ensure state is written/updated in sessionStorage
+if st.session_state.get('logged_in', False) and 'login_time' in st.session_state:
+    js_write = f"""
+    <script>
+        try {{
+            sessionStorage.setItem("munyun_logged_in", "true");
+            sessionStorage.setItem("munyun_login_time", "{st.session_state.login_time.isoformat()}");
+        }} catch (e) {{
+            console.error("Failed to write sessionStorage:", e);
+        }}
+    </script>
+    """
+    st.components.v1.html(js_write, height=0, width=0)
+
+# --- Authentication & Multi-Factor System State Init ---
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 if 'setup_mfa' not in st.session_state:
@@ -720,6 +793,7 @@ st.sidebar.markdown("---")
 if st.sidebar.button("🔓 Logout"):
     st.session_state.logged_in = False
     st.session_state.login_time = None
+    st.session_state.clear_storage = True
     st.rerun()
 
 # --- Main Dashboard ---
