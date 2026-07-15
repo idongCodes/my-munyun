@@ -133,8 +133,8 @@ if st.session_state.get('clear_storage', False):
     js_clear = """
     <script>
         try {
-            sessionStorage.removeItem("munyun_logged_in");
-            sessionStorage.removeItem("munyun_login_time");
+            window.parent.sessionStorage.removeItem("munyun_logged_in");
+            window.parent.sessionStorage.removeItem("munyun_login_time");
         } catch (e) {
             console.error("Failed to clear sessionStorage:", e);
         }
@@ -165,8 +165,8 @@ if not st.session_state.get('logged_in', False) and not st.session_state.get('se
     js_read = """
     <script>
         try {
-            const loggedIn = sessionStorage.getItem("munyun_logged_in");
-            const loginTime = sessionStorage.getItem("munyun_login_time");
+            const loggedIn = window.parent.sessionStorage.getItem("munyun_logged_in");
+            const loginTime = window.parent.sessionStorage.getItem("munyun_login_time");
             if (loggedIn === "true" && loginTime) {
                 const loginDate = new Date(loginTime);
                 const diffMs = new Date() - loginDate;
@@ -191,8 +191,8 @@ if st.session_state.get('logged_in', False) and 'login_time' in st.session_state
     js_write = f"""
     <script>
         try {{
-            sessionStorage.setItem("munyun_logged_in", "true");
-            sessionStorage.setItem("munyun_login_time", "{st.session_state.login_time.isoformat()}");
+            window.parent.sessionStorage.setItem("munyun_logged_in", "true");
+            window.parent.sessionStorage.setItem("munyun_login_time", "{st.session_state.login_time.isoformat()}");
         }} catch (e) {{
             console.error("Failed to write sessionStorage:", e);
         }}
