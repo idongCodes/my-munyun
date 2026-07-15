@@ -223,12 +223,16 @@ if not st.session_state.logged_in:
             if login_method == "SMS Verification":
                 if not st.session_state.sms_sent:
                     with st.form("sms_request_form", clear_on_submit=False):
-                        phone_input = st.text_input("Phone Number", placeholder="+1 (774) 312 6471")
+                        default_val = ALLOWED_PHONE_NUMBERS[0] if ALLOWED_PHONE_NUMBERS else ""
+                        phone_input = st.text_input("Phone Number", value=default_val, placeholder="+1 (774) 312 6471")
                         send_btn = st.form_submit_button("Send Code")
                         
                         if send_btn:
-                            cleaned_num = clean_phone_number(phone_input)
-                            if cleaned_num in ALLOWED_PHONE_NUMBERS:
+                            if not phone_input.strip():
+                                st.error("Please enter your phone number.")
+                            else:
+                                cleaned_num = clean_phone_number(phone_input)
+                                if cleaned_num in ALLOWED_PHONE_NUMBERS:
                                 code = str(random.randint(100000, 999999))
                                 st.session_state.sms_code = code
                                 st.session_state.sms_phone = cleaned_num
