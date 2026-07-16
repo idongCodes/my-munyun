@@ -1,18 +1,47 @@
-# Python virtual environment
-.venv/
-__pycache__/
-*.pyc
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# Local Database
-data.db
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
 
-# Secrets / Environment files
-.env
+# testing
+/coverage
 
-# Streamlit config (if any)
-.streamlit/
+# next.js
+/.next/
+/out/
 
-# Agent skills (environment symlinks)
-.agents/
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# IDE/Agent specific files
 .claude/
-
+.agents/
+.gemini/
+data.db

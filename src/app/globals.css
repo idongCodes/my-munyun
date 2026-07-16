@@ -1,0 +1,243 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --background: #000000;
+  --foreground: #f3f4f6;
+  --brand-blue: #4e80e4;
+  --brand-blue-hover: #76a2f2;
+  --brand-blue-dark: #1d3b7a;
+  --card-bg: rgba(10, 10, 10, 0.85);
+  --card-border: rgba(78, 128, 228, 0.15);
+  --input-bg: rgba(255, 255, 255, 0.04);
+  --input-border: rgba(78, 128, 228, 0.18);
+  --text-primary: #ffffff;
+  --text-secondary: #9ca3af;
+  --text-muted: #cbd5e1;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: 'Plus Jakarta Sans', 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #050505;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(78, 128, 228, 0.2);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(78, 128, 228, 0.4);
+}
+
+/* Premium Styling Utilities */
+.custom-card {
+  background: var(--card-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.8);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.custom-card:hover {
+  border: 1px solid rgba(78, 128, 228, 0.4);
+  box-shadow: 0 15px 35px -5px rgba(78, 128, 228, 0.25);
+  transform: translateY(-2px);
+}
+
+/* Animations */
+@keyframes splash-fade {
+  0% {
+    opacity: 1;
+    visibility: visible;
+  }
+  80% {
+    opacity: 1;
+    visibility: visible;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+@keyframes login-fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-splash {
+  animation: splash-fade 3.0s forwards;
+}
+
+.animate-login-delayed {
+  animation: login-fade-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) 2.5s forwards;
+}
+
+.animate-login-instant {
+  animation: login-fade-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Custom form inputs */
+.form-input {
+  background-color: var(--input-bg) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--input-border) !important;
+  border-radius: 12px !important;
+  padding: 0.75rem 1rem !important;
+  width: 100%;
+  font-size: 0.95rem;
+  outline: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.form-input:focus {
+  border-color: var(--brand-blue) !important;
+  box-shadow: 0 0 0 1px var(--brand-blue) !important;
+  background-color: rgba(20, 20, 20, 0.8) !important;
+}
+
+/* Custom premium buttons */
+.btn-primary {
+  background: linear-gradient(135deg, var(--brand-blue-dark) 0%, var(--brand-blue) 100%) !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 12px !important;
+  padding: 0.75rem 1.5rem !important;
+  font-weight: 600 !important;
+  cursor: pointer;
+  box-shadow: 0 4px 14px 0 rgba(78, 128, 228, 0.3) !important;
+  transition: all 0.25s ease !important;
+  text-align: center;
+  display: inline-block;
+  text-decoration: none;
+}
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--brand-blue) 0%, var(--brand-blue-hover) 100%) !important;
+  box-shadow: 0 6px 20px 0 rgba(78, 128, 228, 0.5) !important;
+  transform: translateY(-1px);
+}
+.btn-primary:active {
+  transform: translateY(1px);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: var(--text-primary) !important;
+  border-radius: 12px !important;
+  padding: 0.75rem 1.5rem !important;
+  font-weight: 600 !important;
+  cursor: pointer;
+  transition: all 0.25s ease !important;
+  text-align: center;
+  display: inline-block;
+  text-decoration: none;
+}
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(78, 128, 228, 0.3) !important;
+  color: var(--brand-blue) !important;
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%) !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 12px !important;
+  padding: 0.75rem 1.5rem !important;
+  font-weight: 600 !important;
+  cursor: pointer;
+  box-shadow: 0 4px 14px 0 rgba(220, 38, 38, 0.3) !important;
+  transition: all 0.25s ease !important;
+  text-align: center;
+  display: inline-block;
+  text-decoration: none;
+}
+.btn-danger:hover {
+  background: linear-gradient(135deg, #991b1b 0%, #ef4444 100%) !important;
+  box-shadow: 0 6px 20px 0 rgba(220, 38, 38, 0.4) !important;
+  transform: translateY(-1px);
+}
+
+/* Badges */
+.badge-demo {
+  background-color: rgba(251, 191, 36, 0.15);
+  color: #fbbf24;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+.badge-linked {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+.badge-unlinked {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* Table styles */
+.custom-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  background-color: rgba(10, 10, 10, 0.6);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.custom-table th {
+  background-color: rgba(78, 128, 228, 0.1);
+  color: var(--text-primary);
+  font-weight: 600;
+  text-align: left;
+  padding: 1rem;
+  font-size: 0.9rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.custom-table td {
+  padding: 1rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.custom-table tr:last-child td {
+  border-bottom: none;
+}
+.custom-table tr:hover td {
+  background-color: rgba(255, 255, 255, 0.02);
+  color: var(--text-primary);
+}
