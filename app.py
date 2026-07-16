@@ -112,8 +112,10 @@ st.markdown("""
 
 # Render Splash Screen for the first 5 seconds of the session load
 import time
-if 'splash_shown' not in st.session_state or not st.session_state.splash_shown:
+if 'session_start_time' not in st.session_state:
     st.session_state.session_start_time = time.time()
+
+if 'splash_shown' not in st.session_state or not st.session_state.splash_shown:
     st.session_state.splash_shown = True
 
 # Keep splash screen in the DOM for the duration of the animation (5.0s)
