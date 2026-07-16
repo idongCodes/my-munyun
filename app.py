@@ -55,6 +55,7 @@ def load_css():
     else:
         st.markdown("<style>body { background-color: #000000; color: white; }</style>", unsafe_allow_html=True)
 
+# Force reload when stylesheet changes
 load_css()
 
 # Inject sessionStorage message listener in parent DOM to bypass iframe sandbox restrictions
