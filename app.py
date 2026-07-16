@@ -110,9 +110,19 @@ st.markdown("""
 " style="display:none;" />
 """, unsafe_allow_html=True)
 
-# Render Splash Screen once per session load
-just_shown_splash = False
-if 'splash_shown' not in st.session_state:
+# Render Splash Screen for the first 3 seconds of the session load
+import time
+if 'session_start_time' not in st.session_state:
+    st.session_state.session_start_time = time.time()
+
+if 'splash_shown' not in st.session_state or not st.session_state.splash_shown:
+    st.session_state.splash_shown = True
+
+# Keep splash screen in the DOM for the duration of the animation (3.0s)
+is_animating = (time.time() - st.session_state.session_start_time) < 3.0
+just_shown_splash = is_animating
+
+if is_animating:
     st.markdown("""
     <div id="splash-screen" style="text-align: center;">
         <div id="splash-logo"><span class="emoji">💸</span><span class="logo-text"> Munyun</span></div>
@@ -120,8 +130,6 @@ if 'splash_shown' not in st.session_state:
         <div style="margin-top: 20px; color: #9ca3af; font-size: 0.9rem; font-family: 'Plus Jakarta Sans', sans-serif; letter-spacing: 0.05em; text-align: center; width: 100%;">SECURELY SYNCING WEALTH...</div>
     </div>
     """, unsafe_allow_html=True)
-    st.session_state.splash_shown = True
-    just_shown_splash = True
 
 from helpers import get_config, clean_phone_number, send_twilio_sms
 
