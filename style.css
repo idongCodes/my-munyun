@@ -245,7 +245,7 @@ section[data-testid="stSidebar"] {
     justify-content: center;
     align-items: center;
     z-index: 999999;
-    animation: splash-fade 5.0s forwards;
+    animation: splash-fade 3.0s forwards;
     pointer-events: none;
 }
 
@@ -363,7 +363,7 @@ section[data-testid="stSidebar"] {
 }
 
 .login-card-container.delayed-fade {
-    animation-delay: 4.5s; /* Delay to stagger with splash screen fade-out */
+    animation-delay: 2.5s; /* Delay to stagger with splash screen fade-out */
 }
 
 .login-card-container.instant-fade {
@@ -411,7 +411,7 @@ div[data-testid="stForm"] {
 
 /* Match container timing with parent wrappers */
 .delayed-fade + div[data-testid="stForm"] {
-    animation-delay: 4.5s;
+    animation-delay: 2.5s;
 }
 
 .instant-fade + div[data-testid="stForm"] {
