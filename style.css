@@ -510,7 +510,7 @@ div[data-testid="stAlert"] p {
 
 /* --- Premium Custom Selectbox (Dropdown) Styling --- */
 /* Target the select container */
-div[data-testid="stSelectbox"] > div[data-baseweb="select"] {
+div[data-testid="stSelectbox"] div[data-baseweb="select"] {
     background: rgba(15, 15, 15, 0.7) !important;
     backdrop-filter: blur(12px) !webkit-backdrop-filter: blur(12px) !important;
     border: 1px solid rgba(78, 128, 228, 0.18) !important;
@@ -520,14 +520,14 @@ div[data-testid="stSelectbox"] > div[data-baseweb="select"] {
 }
 
 /* Hover effect on selectbox */
-div[data-testid="stSelectbox"] > div[data-baseweb="select"]:hover {
+div[data-testid="stSelectbox"] div[data-baseweb="select"]:hover {
     border-color: rgba(78, 128, 228, 0.5) !important;
     box-shadow: 0 0 15px rgba(78, 128, 228, 0.12) !important;
     background: rgba(20, 20, 20, 0.8) !important;
 }
 
 /* Focus effect when open */
-div[data-testid="stSelectbox"] > div[data-baseweb="select"]:focus-within {
+div[data-testid="stSelectbox"] div[data-baseweb="select"]:focus-within {
     border-color: #4e80e4 !important;
     box-shadow: 0 0 20px rgba(78, 128, 228, 0.25) !important;
 }
