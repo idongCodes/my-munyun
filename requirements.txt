@@ -9,3 +9,5 @@ requests
 pydantic
 cryptography
 pyotp
+pytest
+pytest-cov
