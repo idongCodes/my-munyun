@@ -369,7 +369,7 @@ if not st.session_state.logged_in:
                     setup_mfa_trigger = True
                 
         st.markdown("""
-        <p style="text-align: center; color: #4b5563; font-size: 0.8rem; margin-top: 15px; font-family: 'Plus Jakarta Sans', sans-serif;">
+        <p style="text-align: center; color: #cbd5e1; font-size: 0.8rem; margin-top: 15px; font-family: 'Plus Jakarta Sans', sans-serif;">
             Protected by AES-256 local database encryption.
         </p>
         """, unsafe_allow_html=True)

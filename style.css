@@ -431,6 +431,83 @@ div[data-testid="stForm"] label p {
     letter-spacing: 0.05em;
 }
 
+/* --- Legibility and contrast overrides for dark mode on black background --- */
+/* Set global font color to off-white, overriding any light-mode browser defaults */
+.stApp, .stApp [data-testid="stHeader"] {
+    color: #f3f4f6 !important;
+}
+
+/* Style standard paragraphs, lists, and markdown blocks to be light-colored */
+p, li, ul, ol, .stMarkdown, .stText, div[data-testid="stMarkdownContainer"] p {
+    color: #f3f4f6 !important;
+}
+
+/* Ensure form and widget labels stand out clearly */
+label, [data-testid="stWidgetLabel"] p {
+    color: #e5e7eb !important;
+    font-weight: 500 !important;
+}
+
+/* Style all input fields (text, number, textareas, comboboxes) to be dark themed with white text */
+input, textarea, select, div[data-baseweb="select"], div[role="combobox"] {
+    background-color: rgba(255, 255, 255, 0.04) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(78, 128, 228, 0.15) !important;
+    border-radius: 8px !important;
+}
+
+/* Ensure selected value text inside dropdown controls is white */
+div[data-baseweb="select"] div {
+    color: #ffffff !important;
+}
+
+/* Ensure focus states on inputs look great with our blue brand color */
+input:focus, textarea:focus, div[data-baseweb="select"]:focus-within {
+    border-color: #4e80e4 !important;
+    box-shadow: 0 0 0 1px #4e80e4 !important;
+}
+
+/* Ensure select dropdown options and text are white/light */
+div[data-baseweb="popover"] {
+    background-color: #0c0c0c !important;
+    border: 1px solid rgba(78, 128, 228, 0.2) !important;
+}
+
+div[data-baseweb="popover"] li {
+    color: #ffffff !important;
+    background-color: transparent !important;
+}
+
+div[data-baseweb="popover"] li:hover {
+    background-color: rgba(78, 128, 228, 0.15) !important;
+    color: #4e80e4 !important;
+}
+
+/* Table styling overrides */
+table {
+    color: #f3f4f6 !important;
+    background-color: rgba(10, 10, 10, 0.6) !important;
+}
+
+th {
+    color: #ffffff !important;
+    background-color: rgba(78, 128, 228, 0.1) !important;
+}
+
+td {
+    color: #e5e7eb !important;
+}
+
+/* Lighten warning/info message texts to be highly readable */
+div[data-testid="stAlert"] p {
+    color: #ffffff !important;
+}
+
+/* Lighten help and caption texts to a readable light grey */
+[data-testid="stCaptionContainer"], small, .caption {
+    color: #cbd5e1 !important;
+}
+
 
 
 
