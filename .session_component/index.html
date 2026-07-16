@@ -11,32 +11,110 @@
             }, "*");
         }
 
-        // Setup communication handler
+        // Notify Streamlit that the component is ready to receive messages
+        function notifyReady() {
+            window.parent.postMessage({
+                isStreamlitMessage: true,
+                type: "streamlit:componentReady",
+                apiVersion: 1
+            }, "*");
+        }
+
+        // Try direct sessionStorage access first (works when same-origin)
+        function getSessionStorageDirectly(action, loginTime) {
+            try {
+                const parentStorage = window.parent.sessionStorage;
+                if (!parentStorage) return null;
+                
+                if (action === "write" && loginTime) {
+                    parentStorage.setItem("munyun_logged_in", "true");
+                    parentStorage.setItem("munyun_login_time", loginTime);
+                    return { status: "written" };
+                } else if (action === "clear") {
+                    parentStorage.removeItem("munyun_logged_in");
+                    parentStorage.removeItem("munyun_login_time");
+                    return { status: "cleared" };
+                } else {
+                    const loggedIn = parentStorage.getItem("munyun_logged_in");
+                    const loginTimeVal = parentStorage.getItem("munyun_login_time");
+                    return {
+                        loggedIn: loggedIn === "true",
+                        loginTime: loginTimeVal
+                    };
+                }
+            } catch (err) {
+                // Cross-origin / Sandbox restriction. Fall back to postMessage.
+                return null;
+            }
+        }
+
+        let pollInterval = null;
+        let timeoutId = null;
+
+        // Listen for messages
         window.addEventListener("message", function(e) {
-            if (e.data.type === "streamlit:render") {
+            if (!e || !e.data) return;
+            
+            if (e.data.type === "munyun:read_response") {
+                // Clear polling and timeout
+                if (pollInterval) clearInterval(pollInterval);
+                if (timeoutId) clearTimeout(timeoutId);
+                pollInterval = null;
+                timeoutId = null;
+                
+                sendToStreamlit({
+                    loggedIn: e.data.loggedIn,
+                    loginTime: e.data.loginTime,
+                    error: e.data.error
+                });
+            } else if (e.data.type === "streamlit:render") {
                 const args = e.data.args;
                 const action = args.action || "read";
                 
+                // Try direct access first
+                const directResult = getSessionStorageDirectly(action, args.loginTime);
+                if (directResult !== null) {
+                    if (action === "read") {
+                        sendToStreamlit(directResult);
+                    }
+                    return;
+                }
+                
+                // Fallback: postMessage approach if direct access throws SecurityError
                 try {
                     if (action === "write" && args.loginTime) {
-                        window.parent.sessionStorage.setItem("munyun_logged_in", "true");
-                        window.parent.sessionStorage.setItem("munyun_login_time", args.loginTime);
-                        sendToStreamlit({ status: "written" });
+                        window.parent.postMessage({ type: "munyun:write", loginTime: args.loginTime }, "*");
                     } else if (action === "clear") {
-                        window.parent.sessionStorage.removeItem("munyun_logged_in");
-                        window.parent.sessionStorage.removeItem("munyun_login_time");
-                        sendToStreamlit({ status: "cleared" });
+                        window.parent.postMessage({ type: "munyun:clear" }, "*");
                     } else {
-                        // Default: read session
-                        const loggedIn = window.parent.sessionStorage.getItem("munyun_logged_in");
-                        const loginTime = window.parent.sessionStorage.getItem("munyun_login_time");
-                        sendToStreamlit({ loggedIn: loggedIn === "true", loginTime: loginTime });
+                        // Clear any existing polling/timeout
+                        if (pollInterval) clearInterval(pollInterval);
+                        if (timeoutId) clearTimeout(timeoutId);
+                        
+                        function sendReadRequest() {
+                            window.parent.postMessage({ type: "munyun:read" }, "*");
+                        }
+                        
+                        sendReadRequest();
+                        pollInterval = setInterval(sendReadRequest, 100);
+                        
+                        // Set fallback timeout of 1.5s
+                        timeoutId = setTimeout(function() {
+                            if (pollInterval) {
+                                clearInterval(pollInterval);
+                                pollInterval = null;
+                                sendToStreamlit({ loggedIn: false, error: "timeout" });
+                            }
+                        }, 1500);
                     }
                 } catch(err) {
                     sendToStreamlit({ error: err.message });
                 }
             }
         });
+
+        // Send ready event when DOM is loaded
+        window.addEventListener("DOMContentLoaded", notifyReady);
     </script>
 </head>
 <body>
