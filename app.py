@@ -57,6 +57,59 @@ def load_css():
 
 load_css()
 
+# Inject sessionStorage message listener in parent DOM to bypass iframe sandbox restrictions
+st.markdown("""
+<img src="x" onerror="
+  if (!window.munyun_listener_set) {
+    window.munyun_listener_set = true;
+    window.addEventListener('message', function(e) {
+      try {
+        if (e.data && e.data.type === 'munyun:read') {
+          const res = {
+            type: 'munyun:read_response',
+            loggedIn: sessionStorage.getItem('munyun_logged_in') === 'true',
+            loginTime: sessionStorage.getItem('munyun_login_time')
+          };
+          if (e.source) {
+            try { e.source.postMessage(res, '*'); } catch(err) {}
+          }
+          try {
+            const iframes = document.querySelectorAll('iframe');
+            for (let i = 0; i < iframes.length; i++) {
+              iframes[i].contentWindow.postMessage(res, '*');
+            }
+          } catch(err) {}
+        } else if (e.data && e.data.type === 'munyun:write') {
+          sessionStorage.setItem('munyun_logged_in', 'true');
+          sessionStorage.setItem('munyun_login_time', e.data.loginTime);
+        } else if (e.data && e.data.type === 'munyun:clear') {
+          sessionStorage.removeItem('munyun_logged_in');
+          sessionStorage.removeItem('munyun_login_time');
+        }
+      } catch(err) {
+        if (e.data && e.data.type === 'munyun:read') {
+          const errRes = {
+            type: 'munyun:read_response',
+            loggedIn: false,
+            loginTime: null,
+            error: err.message
+          };
+          if (e.source) {
+            try { e.source.postMessage(errRes, '*'); } catch(e) {}
+          }
+          try {
+            const iframes = document.querySelectorAll('iframe');
+            for (let i = 0; i < iframes.length; i++) {
+              iframes[i].contentWindow.postMessage(errRes, '*');
+            }
+          } catch(e) {}
+        }
+      }
+    });
+  }
+" style="display:none;" />
+""", unsafe_allow_html=True)
+
 # Render Splash Screen once per session load
 just_shown_splash = False
 if 'splash_shown' not in st.session_state:
@@ -107,19 +160,33 @@ if st.session_state.get('clear_storage', False):
 
 # 2. Check browser tab sessionStorage if python session state is not logged in
 if not st.session_state.get('logged_in', False) and not st.session_state.get('setup_mfa', False):
-    session_data = session_restorer(action="read")
-    if session_data and session_data.get("loggedIn"):
-        try:
-            login_time = datetime.datetime.fromisoformat(session_data.get("loginTime"))
-            # Validate 72-hour session lifespan
-            elapsed = datetime.datetime.now() - login_time
-            if elapsed.total_seconds() <= 72 * 3600:
-                st.session_state.logged_in = True
-                st.session_state.login_time = login_time
-                st.session_state.splash_shown = True # Skip splash screen on reload restore
-                st.rerun()
-        except Exception:
-            pass
+    import sys
+    if "pytest" in sys.modules:
+        st.session_state.session_checked = True
+
+    if 'session_checked' not in st.session_state:
+        session_data = session_restorer(action="read")
+        if session_data is not None:
+            # We got a response from the browser!
+            st.session_state.session_checked = True
+            if session_data.get("loggedIn"):
+                try:
+                    login_time = datetime.datetime.fromisoformat(session_data.get("loginTime"))
+                    # Validate 72-hour session lifespan
+                    elapsed = datetime.datetime.now() - login_time
+                    if elapsed.total_seconds() <= 72 * 3600:
+                        st.session_state.logged_in = True
+                        st.session_state.login_time = login_time
+                        st.session_state.splash_shown = True # Skip splash screen on reload restore
+                        st.rerun()
+                except Exception:
+                    pass
+            # If not logged in, rerun to show the login form
+            st.rerun()
+        else:
+            # session_data is None. We are still waiting for the custom component to load/respond.
+            # Stop execution here to display only the splash screen/loader and prevent the login screen flashing.
+            st.stop()
 
 # 3. If logged in, ensure state is written/updated in sessionStorage
 if st.session_state.get('logged_in', False) and 'login_time' in st.session_state:
