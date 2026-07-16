@@ -1,0 +1,34 @@
+import { NextResponse } from 'next/server';
+import { getCredential } from '@/lib/db';
+import { plaidClient, isPlaidConfigured } from '@/lib/plaid';
+import { Products, CountryCode } from 'plaid';
+
+export async function POST(request: Request) {
+  try {
+    const useMockCred = await getCredential('use_mock_data');
+    const useMockData = useMockCred === null 
+      ? (process.env.USE_MOCK_DATA || 'true').toLowerCase() === 'true' 
+      : useMockCred.toLowerCase() === 'true';
+
+    const activeUseMock = !isPlaidConfigured || useMockData;
+
+    if (activeUseMock) {
+      return NextResponse.json({ link_token: "mock_link_token" });
+    }
+
+    const response = await plaidClient.linkTokenCreate({
+      client_name: "Munyun Finance",
+      language: "en",
+      country_codes: [CountryCode.Us],
+      user: {
+        client_user_id: "user_idongcodes"
+      },
+      products: [Products.Transactions]
+    });
+
+    return NextResponse.json({ link_token: response.data.link_token });
+  } catch (error: any) {
+    console.error("Error creating Link Token:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
