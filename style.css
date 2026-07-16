@@ -508,6 +508,104 @@ div[data-testid="stAlert"] p {
     color: #cbd5e1 !important;
 }
 
+/* --- Premium Custom Selectbox (Dropdown) Styling --- */
+/* Target the select container */
+div[data-testid="stSelectbox"] > div[data-baseweb="select"] {
+    background: rgba(15, 15, 15, 0.7) !important;
+    backdrop-filter: blur(12px) !webkit-backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(78, 128, 228, 0.18) !important;
+    border-radius: 12px !important;
+    padding: 2px 6px !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Hover effect on selectbox */
+div[data-testid="stSelectbox"] > div[data-baseweb="select"]:hover {
+    border-color: rgba(78, 128, 228, 0.5) !important;
+    box-shadow: 0 0 15px rgba(78, 128, 228, 0.12) !important;
+    background: rgba(20, 20, 20, 0.8) !important;
+}
+
+/* Focus effect when open */
+div[data-testid="stSelectbox"] > div[data-baseweb="select"]:focus-within {
+    border-color: #4e80e4 !important;
+    box-shadow: 0 0 20px rgba(78, 128, 228, 0.25) !important;
+}
+
+/* Style selected option text inside the box */
+div[data-testid="stSelectbox"] [data-baseweb="select"] div[role="button"] {
+    color: #ffffff !important;
+    font-size: 0.95rem !important;
+    font-weight: 500 !important;
+}
+
+/* Style selectbox arrow and icons */
+div[data-testid="stSelectbox"] [data-baseweb="select"] svg {
+    fill: #4e80e4 !important;
+    transition: transform 0.3s ease !important;
+}
+
+/* Style the dropdown popover menu */
+div[data-baseweb="popover"] {
+    background: rgba(10, 10, 10, 0.92) !important;
+    backdrop-filter: blur(25px) !webkit-backdrop-filter: blur(25px) !important;
+    border: 1px solid rgba(78, 128, 228, 0.25) !important;
+    border-radius: 14px !important;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.85), 0 0 30px rgba(78, 128, 228, 0.08) !important;
+    margin-top: 4px !important;
+    overflow: hidden !important;
+    animation: dropdown-slide-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+/* Dropdown slide-in animation */
+@keyframes dropdown-slide-in {
+    0% {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Style the list wrapper */
+div[data-baseweb="popover"] ul {
+    background-color: transparent !important;
+    padding: 6px !important;
+}
+
+/* Style each option item in the list */
+div[data-baseweb="popover"] li {
+    color: #cbd5e1 !important;
+    background-color: transparent !important;
+    border-radius: 8px !important;
+    padding: 8px 12px !important;
+    margin: 2px 0 !important;
+    font-size: 0.92rem !important;
+    font-weight: 500 !important;
+    transition: all 0.2s ease !important;
+}
+
+/* Option item hover effect */
+div[data-baseweb="popover"] li:hover {
+    background: rgba(78, 128, 228, 0.15) !important;
+    color: #4e80e4 !important;
+}
+
+/* Selected option item style */
+div[data-baseweb="popover"] li[aria-selected="true"] {
+    background: rgba(78, 128, 228, 0.28) !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+}
+
+/* Hover on selected option */
+div[data-baseweb="popover"] li[aria-selected="true"]:hover {
+    background: rgba(78, 128, 228, 0.35) !important;
+    color: #ffffff !important;
+}
+
 
 
 
