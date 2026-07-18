@@ -646,32 +646,32 @@ export default function Home() {
   // --- Render Splash Screen (Conditional Return AFTER all hooks) ---
   if (isSplashActive) {
     return (
-      <div className="fixed inset-0 bg-black flex flex-col justify-center items-center z-50 animate-splash p-6 sm:p-12">
-        <div className="flex flex-col items-center justify-center text-center max-w-lg mx-auto w-full">
+      <div className="fixed inset-0 bg-black flex flex-col justify-center items-center z-50 animate-splash p-6 sm:p-12 border border-red-500">
+        <div className="flex flex-col items-center justify-center text-center max-w-lg mx-auto w-full border border-red-500 p-2">
           {/* Main Title Heading */}
-          <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white font-outfit leading-tight mb-10 sm:mb-14">
+          <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white font-outfit leading-tight mb-10 sm:mb-14 border border-red-500 px-4 py-2">
             💸 My <span className="text-[#397ef7]">Munyun</span>
           </h1>
           
           {/* Subheading Advisor Badge */}
-          <div className="my-8 sm:my-12">
-            <p className="text-xs sm:text-sm font-bold text-slate-200 tracking-[0.2em] uppercase bg-[#397ef7]/10 px-7 py-3 rounded-full border border-[#397ef7]/35 shadow-[0_0_25px_rgba(57,126,247,0.25)] inline-block">
+          <div className="my-8 sm:my-12 border border-red-500 p-1">
+            <p className="text-xs sm:text-sm font-bold text-slate-200 tracking-[0.2em] uppercase bg-[#397ef7]/10 px-7 py-3 rounded-full border border-red-500 shadow-[0_0_25px_rgba(57,126,247,0.25)] inline-block">
               Your Digital Munyun Advisor 💰️
             </p>
           </div>
 
           {/* Witty CLI Terminal Box */}
-          <div className="w-full max-w-md bg-slate-950/95 border border-[#397ef7]/45 rounded-2xl p-5 sm:p-6 shadow-[0_0_35px_rgba(57,126,247,0.2)] text-left font-mono text-xs sm:text-sm mt-12 sm:mt-16">
-            <div className="flex items-center gap-2 mb-3 border-b border-slate-800/90 pb-2.5">
-              <span className="w-3 h-3 rounded-full bg-red-500/80 inline-block"></span>
-              <span className="w-3 h-3 rounded-full bg-yellow-500/80 inline-block"></span>
-              <span className="w-3 h-3 rounded-full bg-green-500/80 inline-block"></span>
-              <span className="text-[10px] text-slate-400 font-sans ml-auto uppercase tracking-wider font-semibold">munyun-cli v2.4</span>
+          <div className="w-full max-w-md bg-slate-950/95 border border-red-500 rounded-2xl p-5 sm:p-6 shadow-[0_0_35px_rgba(57,126,247,0.2)] text-left font-mono text-xs sm:text-sm mt-12 sm:mt-16">
+            <div className="flex items-center gap-2 mb-3 border-b border-red-500 pb-2.5">
+              <span className="w-3 h-3 rounded-full bg-red-500/80 inline-block border border-red-500"></span>
+              <span className="w-3 h-3 rounded-full bg-yellow-500/80 inline-block border border-red-500"></span>
+              <span className="w-3 h-3 rounded-full bg-green-500/80 inline-block border border-red-500"></span>
+              <span className="text-[10px] text-slate-400 font-sans ml-auto uppercase tracking-wider font-semibold border border-red-500 px-1">munyun-cli v2.4</span>
             </div>
-            <div className="text-[#397ef7] font-semibold flex items-center gap-2.5 min-h-[42px] px-1">
-              <span className="text-emerald-400 font-bold text-base">$</span>
-              <span className="text-slate-100 flex-1 leading-relaxed">{CLI_MESSAGES[cliIndex]}</span>
-              <span className="w-2 h-4 bg-[#397ef7] animate-pulse inline-block rounded-xs"></span>
+            <div className="text-[#397ef7] font-semibold flex items-center gap-2.5 min-h-[42px] px-1 border border-red-500">
+              <span className="text-emerald-400 font-bold text-base border border-red-500 px-1">$</span>
+              <span className="text-slate-100 flex-1 leading-relaxed border border-red-500 px-1">{CLI_MESSAGES[cliIndex]}</span>
+              <span className="w-2 h-4 bg-[#397ef7] animate-pulse inline-block rounded-xs border border-red-500"></span>
             </div>
           </div>
         </div>
