@@ -47,17 +47,25 @@ describe('Auth API Route (api/auth)', () => {
     expect(data.qrProvisioningUri).toContain('otpauth://totp/');
   });
 
-  it('should reject invalid TOTP verification code', async () => {
-    const req = new Request('http://localhost/api/auth', {
+  it('should handle TOTP verification attempt', async () => {
+    const setupReq = new Request('http://localhost/api/auth', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'totp_verify', secret: 'JBSWY3DPEHPK3PXP', code: '000000' })
+      body: JSON.stringify({ action: 'totp_setup' })
+    });
+    const setupRes = await POST(setupReq);
+    const setupData = await setupRes.json();
+
+    const verifyReq = new Request('http://localhost/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'totp_verify', secret: setupData.secret, code: '000000' })
     });
 
-    const res = await POST(req);
-    const data = await res.json();
-    expect(data.success).toBe(false);
-    expect(data.message).toContain('Invalid verification code');
+    const verifyRes = await POST(verifyReq);
+    const verifyData = await verifyRes.json();
+    expect(verifyData.success).toBe(false);
+    expect(verifyData.message).toContain('Invalid verification code');
   });
 
   it('should handle SMS code generation and verification', async () => {

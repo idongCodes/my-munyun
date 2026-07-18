@@ -1,8 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import Home from '@/app/page';
 
-// Mock global fetch for API calls in page.tsx
 global.fetch = vi.fn((url: string | URL | Request) => {
   const urlString = typeof url === 'string' ? url : url.toString();
 
@@ -46,18 +45,22 @@ describe('Home Page Component (page.tsx)', () => {
     sessionStorage.clear();
   });
 
-  it('should render splash screen initially with witty CLI advisor message', () => {
-    render(<Home />);
+  it('should render splash screen initially with witty CLI advisor message', async () => {
+    await act(async () => {
+      render(<Home />);
+    });
     expect(screen.getByText(/💸 My/i)).toBeDefined();
     expect(screen.getByText(/Your Digital Munyun Advisor/i)).toBeDefined();
     expect(screen.getByText(/munyun-cli/i)).toBeDefined();
   });
 
-  it('should skip splash screen and show auth screen when session is restored in sessionStorage', () => {
+  it('should skip splash screen and show auth screen when session is restored in sessionStorage', async () => {
     sessionStorage.setItem('munyun_logged_in', 'true');
     sessionStorage.setItem('munyun_login_time', new Date().toISOString());
 
-    render(<Home />);
+    await act(async () => {
+      render(<Home />);
+    });
     expect(screen.getByText(/💸 My/i)).toBeDefined();
   });
 });
