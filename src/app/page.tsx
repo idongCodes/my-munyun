@@ -700,7 +700,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="custom-card relative overflow-hidden p-6 sm:p-8 border-[#397ef7]/30 shadow-[0_0_35px_rgba(57,126,247,0.2)]">
+          <div className="custom-card relative overflow-hidden p-6 sm:p-8 border-[#397ef7]/30 shadow-[0_0_35px_rgba(57,126,247,0.2)] my-6 sm:my-10">
             {/* SETUP TOTP WIZARD */}
             {isSettingUpTotp ? (
               <div className="space-y-6 sm:space-y-7">
