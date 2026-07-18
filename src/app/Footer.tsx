@@ -70,7 +70,7 @@ export default function Footer() {
 
             const content = (
               <div 
-                className="relative group p-3 rounded-xl bg-slate-900/60 hover:bg-slate-800/80 border border-slate-800/80 hover:border-[#397ef7]/50 transition-all cursor-pointer shadow-md active:scale-95"
+                className="relative group p-2.5 rounded-xl hover:bg-slate-900/80 transition-all cursor-pointer active:scale-95"
                 onTouchStart={() => handleTouchStart(item.name)}
                 onTouchEnd={handleTouchEnd}
                 onMouseDown={() => handleTouchStart(item.name)}
