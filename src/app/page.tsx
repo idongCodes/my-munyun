@@ -649,13 +649,15 @@ export default function Home() {
       <div className="fixed inset-0 h-screen min-h-screen h-[100vh] min-h-[100vh] w-screen min-w-screen w-[100vw] bg-black flex flex-col justify-center items-center z-50 animate-splash px-4 py-6 sm:p-12">
         <div className="flex flex-col items-center justify-center gap-3 sm:gap-4 text-center max-w-lg mx-auto w-full h-full px-4 sm:px-6 py-2">
           {/* Main Title Heading */}
-          <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white font-outfit leading-tight px-4 py-2">
-            💸 My <span className="text-[#397ef7]">Munyun</span>
+          <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white font-outfit leading-tight px-4 py-2 mb-3 sm:mb-4 flex items-center justify-center gap-3 sm:gap-4 flex-wrap">
+            <span>💸</span>
+            <span>My</span>
+            <span className="text-[#397ef7]">Munyun</span>
           </h1>
           
           {/* Subheading Advisor Badge */}
-          <div className="p-1">
-            <p className="text-xs sm:text-sm font-bold text-slate-200 tracking-[0.2em] uppercase bg-[#397ef7]/10 px-7 py-3 rounded-full shadow-[0_0_25px_rgba(57,126,247,0.25)] inline-block">
+          <div className="p-1 mb-5 sm:mb-7">
+            <p className="text-xs sm:text-sm font-bold text-slate-200 tracking-[0.2em] uppercase bg-[#397ef7]/10 px-7 py-3.5 rounded-full shadow-[0_0_25px_rgba(57,126,247,0.25)] inline-block">
               Your Digital Munyun Advisor 💰️
             </p>
           </div>
@@ -687,9 +689,11 @@ export default function Home() {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center p-6 sm:p-10">
         <div className="w-full max-w-md animate-login-instant">
-          <div className="text-center mb-8 sm:mb-10 space-y-3">
-            <div className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white font-outfit">
-              💸 My <span className="text-[#397ef7]">Munyun</span>
+          <div className="text-center mb-8 sm:mb-10 space-y-4">
+            <div className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white font-outfit flex items-center justify-center gap-3 sm:gap-3.5">
+              <span>💸</span>
+              <span>My</span>
+              <span className="text-[#397ef7]">Munyun</span>
             </div>
             <div className="text-xs uppercase tracking-[0.25em] text-slate-300 font-bold pt-1">
               Secure Wealth Portal
