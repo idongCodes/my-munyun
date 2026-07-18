@@ -646,27 +646,29 @@ export default function Home() {
   // --- Render Splash Screen (Conditional Return AFTER all hooks) ---
   if (isSplashActive) {
     return (
-      <div className="fixed inset-0 bg-black flex flex-col justify-center items-center z-50 animate-splash p-8 sm:p-16">
-        <div className="flex flex-col items-center justify-center text-center max-w-xl mx-auto space-y-10 sm:space-y-14">
-          <h1 className="text-4xl sm:text-7xl font-extrabold tracking-tight text-white font-outfit leading-tight mb-2">
-            💸 My <span className="text-[#397ef7]">Munyun</span>
-          </h1>
+      <div className="fixed inset-0 bg-black flex flex-col justify-center items-center z-50 animate-splash p-8 sm:p-20">
+        <div className="flex flex-col items-center justify-between text-center max-w-xl mx-auto space-y-16 sm:space-y-24 min-h-[60vh] py-10">
+          <div className="pt-4">
+            <h1 className="text-4xl sm:text-7xl font-extrabold tracking-tight text-white font-outfit leading-tight mb-6 sm:mb-8">
+              💸 My <span className="text-[#397ef7]">Munyun</span>
+            </h1>
+          </div>
           
-          <div className="py-2">
-            <p className="text-xs sm:text-sm font-bold text-slate-200 tracking-[0.25em] uppercase bg-[#397ef7]/10 px-8 py-3.5 rounded-full border border-[#397ef7]/40 shadow-[0_0_25px_rgba(57,126,247,0.3)] inline-block">
+          <div className="py-4">
+            <p className="text-xs sm:text-sm font-bold text-slate-200 tracking-[0.25em] uppercase bg-[#397ef7]/10 px-8 py-4 rounded-full border border-[#397ef7]/40 shadow-[0_0_30px_rgba(57,126,247,0.35)] inline-block">
               Your Digital Munyun Advisor 💰️
             </p>
           </div>
 
           {/* Witty CLI Terminal Box */}
-          <div className="w-full max-w-lg bg-slate-950/95 border border-[#397ef7]/50 rounded-2xl p-5 sm:p-6 shadow-[0_0_40px_rgba(57,126,247,0.2)] text-left font-mono text-xs sm:text-sm mt-4 sm:mt-6">
+          <div className="w-full max-w-lg bg-slate-950/95 border border-[#397ef7]/50 rounded-2xl p-6 sm:p-8 shadow-[0_0_50px_rgba(57,126,247,0.25)] text-left font-mono text-xs sm:text-sm mt-8 sm:mt-14">
             <div className="flex items-center gap-2 mb-4 border-b border-slate-800/90 pb-3">
               <span className="w-3.5 h-3.5 rounded-full bg-red-500/80 inline-block"></span>
               <span className="w-3.5 h-3.5 rounded-full bg-yellow-500/80 inline-block"></span>
               <span className="w-3.5 h-3.5 rounded-full bg-green-500/80 inline-block"></span>
               <span className="text-[11px] text-slate-400 font-sans ml-auto uppercase tracking-widest font-semibold">munyun-cli v2.4</span>
             </div>
-            <div className="text-[#397ef7] font-semibold flex items-center gap-3 min-h-[44px] px-1">
+            <div className="text-[#397ef7] font-semibold flex items-center gap-3 min-h-[48px] px-1">
               <span className="text-emerald-400 font-bold text-base">$</span>
               <span className="text-slate-100 flex-1 leading-relaxed">{CLI_MESSAGES[cliIndex]}</span>
               <span className="w-2.5 h-5 bg-[#397ef7] animate-pulse inline-block rounded-xs"></span>
