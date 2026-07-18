@@ -1,28 +1,30 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { 
+  initDb,
   getDb, 
   getAccounts, 
+  saveAccounts,
   getTransactions, 
+  saveTransactions,
+  updateTransaction, 
+  clearAccounts,
+  clearTransactions,
   saveBudget, 
   getBudgets, 
-  updateTransaction, 
-  clearAllData, 
-  getPlaidItems, 
-  savePlaidItem 
+  deleteBudget,
+  savePlaidItem, 
+  getPlaidItems,
+  deletePlaidItem,
+  setCredential,
+  getCredential,
+  deleteCredential
 } from '@/lib/db';
 
 describe('Database Module (db.ts)', () => {
   beforeEach(async () => {
-    await clearAllData();
-    const db = await getDb();
-    // Reseed initial data for testing
-    await db.exec(`
-      INSERT OR REPLACE INTO accounts (id, name, type, subtype, mask, institution, balance_current, balance_available)
-      VALUES ('acc_test_1', 'Advantage Checking', 'depository', 'checking', '1234', 'Bank of America', 5420.50, 5420.50);
-
-      INSERT OR REPLACE INTO transactions (id, account_id, amount, date, name, category, pending, institution, notes)
-      VALUES ('tx_test_1', 'acc_test_1', 45.99, '2026-07-01', 'Whole Foods Market', 'Groceries', 0, 'Bank of America', 'Weekly grocery shopping');
-    `);
+    await initDb();
+    await clearAccounts();
+    await clearTransactions();
   });
 
   it('should initialize database connection and tables', async () => {
@@ -30,52 +32,66 @@ describe('Database Module (db.ts)', () => {
     expect(db).toBeDefined();
   });
 
-  it('should fetch accounts successfully', async () => {
+  it('should save and fetch accounts', async () => {
+    await saveAccounts([
+      { id: 'acc_1', name: 'Advantage Checking', type: 'depository', subtype: 'checking', mask: '1234', balance_current: 5000, balance_available: 5000, institution: 'Bank of America' }
+    ]);
     const accounts = await getAccounts();
-    expect(Array.isArray(accounts)).toBe(true);
-    expect(accounts.length).toBeGreaterThan(0);
+    expect(accounts.length).toBe(1);
     expect(accounts[0].name).toBe('Advantage Checking');
     expect(accounts[0].institution).toBe('Bank of America');
   });
 
-  it('should fetch transactions successfully', async () => {
+  it('should save and fetch transactions', async () => {
+    await saveTransactions([
+      { id: 'tx_1', account_id: 'acc_1', amount: 45.99, date: '2026-07-01', name: 'Whole Foods Market', category: 'Groceries', pending: false, institution: 'Bank of America', notes: 'Weekly grocery' }
+    ]);
     const transactions = await getTransactions();
-    expect(Array.isArray(transactions)).toBe(true);
-    expect(transactions.length).toBeGreaterThan(0);
+    expect(transactions.length).toBe(1);
     expect(transactions[0].name).toBe('Whole Foods Market');
     expect(transactions[0].category).toBe('Groceries');
   });
 
-  it('should update a transaction category and notes', async () => {
-    await updateTransaction('tx_test_1', 'Dining', 'Lunch meeting');
+  it('should update transaction category and notes', async () => {
+    await saveTransactions([
+      { id: 'tx_update_1', account_id: 'acc_1', amount: 20, date: '2026-07-01', name: 'Coffee Shop', category: 'Dining', pending: false, institution: 'Bank of America' }
+    ]);
+    await updateTransaction('tx_update_1', 'Coffee & Snacks', 'Espresso');
     const transactions = await getTransactions();
-    const updatedTx = transactions.find(t => t.id === 'tx_test_1');
+    const updatedTx = transactions.find(t => t.id === 'tx_update_1');
     expect(updatedTx).toBeDefined();
-    expect(updatedTx.category).toBe('Dining');
-    expect(updatedTx.notes).toBe('Lunch meeting');
+    expect(updatedTx.category).toBe('Coffee & Snacks');
+    expect(updatedTx.notes).toBe('Espresso');
   });
 
-  it('should save and retrieve custom budgets', async () => {
+  it('should save, retrieve and delete budgets', async () => {
     await saveBudget('Dining', 350);
-    const budgets = await getBudgets();
+    let budgets = await getBudgets();
     expect(budgets['Dining']).toBe(350);
+
+    await deleteBudget('Dining');
+    budgets = await getBudgets();
+    expect(budgets['Dining']).toBeUndefined();
   });
 
-  it('should save and retrieve Plaid items', async () => {
-    await savePlaidItem('item_test_100', 'access_token_100', 'Bank of America');
-    const items = await getPlaidItems();
-    expect(items.length).toBeGreaterThan(0);
-    expect(items[0].item_id).toBe('item_test_100');
-    expect(items[0].institution_name).toBe('Bank of America');
-  });
+  it('should save, retrieve and delete Plaid items', async () => {
+    await savePlaidItem('item_100', 'access_token_100', 'Bank of America');
+    let items = await getPlaidItems();
+    expect(items.length).toBe(1);
+    expect(items[0].item_id).toBe('item_100');
 
-  it('should clear all data', async () => {
-    await clearAllData();
-    const accounts = await getAccounts();
-    const transactions = await getTransactions();
-    const items = await getPlaidItems();
-    expect(accounts.length).toBe(0);
-    expect(transactions.length).toBe(0);
+    await deletePlaidItem('item_100');
+    items = await getPlaidItems();
     expect(items.length).toBe(0);
+  });
+
+  it('should set, get and delete credentials', async () => {
+    await setCredential('test_key', 'test_val');
+    let val = await getCredential('test_key');
+    expect(val).toBe('test_val');
+
+    await deleteCredential('test_key');
+    val = await getCredential('test_key');
+    expect(val).toBeNull();
   });
 });

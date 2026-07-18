@@ -1,9 +1,13 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { POST as syncPOST } from '@/app/api/sync/route';
 import { POST as clearPOST } from '@/app/api/clear/route';
-import { getAccounts, getTransactions } from '@/lib/db';
+import { initDb, getAccounts, getTransactions } from '@/lib/db';
 
 describe('Sync and Clear API Routes', () => {
+  beforeEach(async () => {
+    await initDb();
+  });
+
   it('should trigger data sync and update records', async () => {
     const res = await syncPOST();
     const data = await res.json();

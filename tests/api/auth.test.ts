@@ -1,8 +1,13 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { POST } from '@/app/api/auth/route';
+import { initDb } from '@/lib/db';
 import { generateSecret, generateToken } from 'otplib';
 
 describe('Auth API Route (api/auth)', () => {
+  beforeEach(async () => {
+    await initDb();
+  });
+
   it('should authenticate with correct passcode', async () => {
     const req = new Request('http://localhost/api/auth', {
       method: 'POST',

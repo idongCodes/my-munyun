@@ -1,9 +1,13 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { POST as createLinkTokenPOST } from '@/app/api/create_link_token/route';
 import { POST as exchangeTokenPOST } from '@/app/api/exchange_public_token/route';
-import { getAccounts } from '@/lib/db';
+import { initDb, getAccounts } from '@/lib/db';
 
 describe('Plaid Link & Exchange API Routes', () => {
+  beforeEach(async () => {
+    await initDb();
+  });
+
   it('should return mock link token in mock mode', async () => {
     const req = new Request('http://localhost/api/create_link_token', {
       method: 'POST',

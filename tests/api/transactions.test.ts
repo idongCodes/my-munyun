@@ -1,8 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { GET, POST } from '@/app/api/transactions/route';
-import { clearAllData, getDb } from '@/lib/db';
+import { initDb, saveTransactions, getTransactions } from '@/lib/db';
 
 describe('Transactions API Route (api/transactions)', () => {
+  beforeEach(async () => {
+    await initDb();
+  });
+
   it('should return transactions and accounts on GET', async () => {
     const res = await GET();
     const data = await res.json();
@@ -14,11 +18,9 @@ describe('Transactions API Route (api/transactions)', () => {
   });
 
   it('should update transaction category and notes on POST', async () => {
-    const db = await getDb();
-    await db.exec(`
-      INSERT OR REPLACE INTO transactions (id, account_id, amount, date, name, category, pending, institution, notes)
-      VALUES ('tx_test_api', 'acc_1', 12.50, '2026-07-05', 'Starbucks', 'Dining', 0, 'Bank of America', 'Coffee');
-    `);
+    await saveTransactions([
+      { id: 'tx_test_api', account_id: 'acc_1', amount: 12.50, date: '2026-07-05', name: 'Starbucks', category: 'Dining', pending: false, institution: 'Bank of America', notes: 'Coffee' }
+    ]);
 
     const updateReq = new Request('http://localhost/api/transactions', {
       method: 'POST',
@@ -30,9 +32,8 @@ describe('Transactions API Route (api/transactions)', () => {
     const data = await res.json();
     expect(data.status).toBe('success');
 
-    const getRes = await GET();
-    const getData = await getRes.json();
-    const updated = getData.transactions.find((t: any) => t.id === 'tx_test_api');
+    const transactions = await getTransactions();
+    const updated = transactions.find((t: any) => t.id === 'tx_test_api');
     expect(updated).toBeDefined();
     expect(updated.category).toBe('Coffee & Snacks');
     expect(updated.notes).toBe('Morning brew');

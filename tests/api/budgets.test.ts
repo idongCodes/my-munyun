@@ -1,7 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { GET, POST, DELETE } from '@/app/api/budgets/route';
+import { initDb } from '@/lib/db';
 
 describe('Budgets API Route (api/budgets)', () => {
+  beforeEach(async () => {
+    await initDb();
+  });
+
   it('should save and return custom budget limits', async () => {
     const postReq = new Request('http://localhost/api/budgets', {
       method: 'POST',

@@ -1,7 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { GET } from '@/app/api/status/route';
+import { initDb } from '@/lib/db';
 
 describe('Status API Route (api/status)', () => {
+  beforeEach(async () => {
+    await initDb();
+  });
+
   it('should return system connection status', async () => {
     const res = await GET();
     const data = await res.json();

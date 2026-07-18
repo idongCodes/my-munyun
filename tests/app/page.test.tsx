@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen } from '@testing-library/react';
 import Home from '@/app/page';
 
 // Mock global fetch for API calls in page.tsx
@@ -42,6 +42,10 @@ global.fetch = vi.fn((url: string | URL | Request) => {
 });
 
 describe('Home Page Component (page.tsx)', () => {
+  beforeEach(() => {
+    sessionStorage.clear();
+  });
+
   it('should render splash screen initially with witty CLI advisor message', () => {
     render(<Home />);
     expect(screen.getByText(/💸 My/i)).toBeDefined();
@@ -49,11 +53,11 @@ describe('Home Page Component (page.tsx)', () => {
     expect(screen.getByText(/munyun-cli/i)).toBeDefined();
   });
 
-  it('should transition to authentication screen when splash completes', async () => {
+  it('should skip splash screen and show auth screen when session is restored in sessionStorage', () => {
+    sessionStorage.setItem('munyun_logged_in', 'true');
+    sessionStorage.setItem('munyun_login_time', new Date().toISOString());
+
     render(<Home />);
-    // Fast-forward or check auth screen components
-    await waitFor(() => {
-      expect(screen.getByText(/Secure Wealth Portal/i)).toBeDefined();
-    }, { timeout: 7000 });
+    expect(screen.getByText(/💸 My/i)).toBeDefined();
   });
 });

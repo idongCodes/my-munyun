@@ -1,7 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { POST } from '@/app/api/toggle_mock/route';
+import { initDb } from '@/lib/db';
 
 describe('Toggle Mock Mode API Route (api/toggle_mock)', () => {
+  beforeEach(async () => {
+    await initDb();
+  });
+
   it('should handle mock toggle requests safely', async () => {
     const req = new Request('http://localhost/api/toggle_mock', {
       method: 'POST',
