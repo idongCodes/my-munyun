@@ -646,7 +646,7 @@ export default function Home() {
   // --- Render Splash Screen (Conditional Return AFTER all hooks) ---
   if (isSplashActive) {
     return (
-      <div className="fixed inset-0 h-screen min-h-screen h-[100vh] min-h-[100vh] w-screen min-w-screen w-[100vw] bg-black flex flex-col justify-center items-center z-50 animate-splash px-4 py-6 sm:p-12">
+      <div className="fixed inset-0 h-screen min-h-screen h-[100vh] min-h-[100vh] w-screen min-w-screen w-[100vw] bg-gradient-to-b from-[#0e2a5e] via-[#040c1b] to-black flex flex-col justify-center items-center z-50 animate-splash px-4 py-6 sm:p-12">
         <div className="flex flex-col items-center justify-center gap-3 sm:gap-4 text-center max-w-lg mx-auto w-full h-full px-4 sm:px-6 py-2">
           {/* Main Title Heading */}
           <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white font-outfit leading-tight px-4 py-1 mb-1 flex items-center justify-center gap-3 sm:gap-4 flex-wrap">
@@ -687,7 +687,7 @@ export default function Home() {
   // --- Render Auth Screens ---
   if (!isLoggedIn) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-6 sm:p-10">
+      <div className="min-h-screen bg-gradient-to-b from-[#0e2a5e] via-[#040c1b] to-black flex items-center justify-center p-6 sm:p-10">
         <div className="w-full max-w-md animate-login-instant">
           <div className="flex flex-col items-center text-center gap-4 sm:gap-6 mb-10 sm:mb-14">
             <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white font-outfit flex items-center justify-center gap-3.5 sm:gap-5">
@@ -951,7 +951,7 @@ export default function Home() {
 
   // --- Render Dashboard App ---
   return (
-    <div className="min-h-screen bg-black flex flex-col md:flex-row">
+    <div className="min-h-screen bg-gradient-to-b from-[#0e2a5e] via-[#040c1b] to-black flex flex-col md:flex-row">
       {/* MOBILE TOP HEADER BAR */}
       <div className="md:hidden flex items-center justify-between p-4 bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800 sticky top-0 z-40">
         <div className="flex items-center gap-2">

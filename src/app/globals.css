@@ -30,7 +30,8 @@
 }
 
 body {
-  background-color: #000000 !important;
+  background: linear-gradient(180deg, #0e2a5e 0%, #040c1b 35%, #000000 100%) !important;
+  background-attachment: fixed !important;
   color: #f8fafc !important;
   font-family: var(--font-sans), 'Plus Jakarta Sans', 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
   overflow-x: hidden;
