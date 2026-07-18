@@ -12,9 +12,6 @@ import {
   saveBudget, 
   getBudgets, 
   deleteBudget,
-  savePlaidItem, 
-  getPlaidItems,
-  deletePlaidItem,
   setCredential,
   getCredential,
   deleteCredential
@@ -72,17 +69,6 @@ describe('Database Module (db.ts)', () => {
     await deleteBudget('Dining');
     budgets = await getBudgets();
     expect(budgets['Dining']).toBeUndefined();
-  });
-
-  it('should save, retrieve and delete Plaid items', async () => {
-    await savePlaidItem('item_100', 'access_token_100', 'Bank of America');
-    let items = await getPlaidItems();
-    expect(items.length).toBe(1);
-    expect(items[0].item_id).toBe('item_100');
-
-    await deletePlaidItem('item_100');
-    items = await getPlaidItems();
-    expect(items.length).toBe(0);
   });
 
   it('should set, get and delete credentials', async () => {

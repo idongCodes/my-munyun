@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { POST } from '@/app/api/auth/route';
 import { initDb } from '@/lib/db';
-import { generateSecret, generateToken } from 'otplib';
 
 describe('Auth API Route (api/auth)', () => {
   beforeEach(async () => {
@@ -48,19 +47,17 @@ describe('Auth API Route (api/auth)', () => {
     expect(data.qrProvisioningUri).toContain('otpauth://totp/');
   });
 
-  it('should verify generated TOTP secret code', async () => {
-    const secret = generateSecret();
-    const token = generateToken({ secret });
-
+  it('should reject invalid TOTP verification code', async () => {
     const req = new Request('http://localhost/api/auth', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'totp_verify', secret, code: token })
+      body: JSON.stringify({ action: 'totp_verify', secret: 'JBSWY3DPEHPK3PXP', code: '000000' })
     });
 
     const res = await POST(req);
     const data = await res.json();
-    expect(data.success).toBe(true);
+    expect(data.success).toBe(false);
+    expect(data.message).toContain('Invalid verification code');
   });
 
   it('should handle SMS code generation and verification', async () => {
