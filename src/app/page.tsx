@@ -629,14 +629,14 @@ export default function Home() {
   if (isSplashActive) {
     return (
       <div className="fixed inset-0 bg-black flex flex-col justify-center items-center z-50 animate-splash p-4">
-        <div className="flex flex-col items-center text-center">
-          <div className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white mb-6 font-outfit">
-            💸 My <span className="text-[#397ef7]">Munyun</span>
-          </div>
-          <div className="w-12 h-12 border-4 border-[#397ef7] border-t-transparent rounded-full animate-spin mb-6"></div>
-          <div className="text-xs sm:text-sm font-bold text-slate-200 tracking-widest uppercase bg-[#397ef7]/10 px-4 py-2 rounded-full border border-[#397ef7]/30">
+        <div className="flex flex-col items-center justify-center text-center max-w-md mx-auto space-y-6">
+          <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white font-outfit text-center leading-tight flex items-center justify-center gap-2">
+            <span>💸</span> My <span className="text-[#397ef7]">Munyun</span>
+          </h1>
+          <div className="w-12 h-12 border-4 border-[#397ef7] border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-xs sm:text-sm font-bold text-slate-200 tracking-widest uppercase bg-[#397ef7]/10 px-5 py-2.5 rounded-full border border-[#397ef7]/30 text-center shadow-[0_0_15px_rgba(57,126,247,0.2)]">
             Your Digital Munyun Advisor 💰️
-          </div>
+          </p>
         </div>
       </div>
     );
