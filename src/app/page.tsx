@@ -689,13 +689,13 @@ export default function Home() {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center p-6 sm:p-10">
         <div className="w-full max-w-md animate-login-instant">
-          <div className="text-center mb-10 sm:mb-14">
-            <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white font-outfit flex items-center justify-center gap-3.5 sm:gap-5 mb-6 sm:mb-8">
+          <div className="flex flex-col items-center text-center gap-4 sm:gap-6 mb-10 sm:mb-14">
+            <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white font-outfit flex items-center justify-center gap-3.5 sm:gap-5">
               <span>💸</span>
               <span>My</span>
               <span className="text-[#397ef7]">Munyun</span>
             </h1>
-            <p className="text-xs uppercase tracking-[0.25em] text-slate-300 font-bold mt-5 sm:mt-6">
+            <p className="text-xs sm:text-sm uppercase tracking-[0.25em] text-slate-300 font-bold">
               Secure Wealth Portal
             </p>
           </div>
