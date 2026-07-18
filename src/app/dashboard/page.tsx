@@ -26,13 +26,20 @@ export default function DashboardPage() {
         {/* Dashboard Shell Container with Gear Icon at Top Right */}
         <section className="relative flex flex-col items-center justify-center min-h-[400px] rounded-2xl border border-dashed border-slate-800/90 bg-slate-950/40 p-12 text-center space-y-4">
           {/* Top Right Gear Settings Icon */}
-          <Link 
-            href="/dashboard/settings"
-            className="absolute top-4 right-4 sm:top-6 sm:right-6 p-2.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/60 hover:border-[#397ef7]/60 transition-all shadow-md active:scale-95 group cursor-pointer"
-            title="User Settings"
-          >
-            <Settings size={20} className="group-hover:rotate-45 transition-transform text-[#397ef7]" />
-          </Link>
+          <div className="absolute top-4 right-4 sm:top-6 sm:right-6 group">
+            <Link 
+              href="/dashboard/settings"
+              className="p-2.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/60 hover:border-[#397ef7]/60 transition-all shadow-md active:scale-95 block cursor-pointer"
+              title="Account Settings"
+            >
+              <Settings size={20} className="group-hover:rotate-45 transition-transform text-[#397ef7]" />
+            </Link>
+            {/* Floating Custom Tooltip */}
+            <div className="absolute -top-9 right-0 bg-slate-900 text-white text-[11px] font-bold py-1.5 px-3 rounded-lg border border-[#397ef7]/40 shadow-xl transition-all duration-200 pointer-events-none whitespace-nowrap opacity-0 group-hover:opacity-100 group-hover:-translate-y-1">
+              <span>Account Settings</span>
+              <div className="absolute -bottom-1 right-3 w-2 h-2 bg-slate-900 border-r border-b border-[#397ef7]/40 rotate-45"></div>
+            </div>
+          </div>
 
           <div className="w-16 h-16 rounded-full bg-[#397ef7]/10 flex items-center justify-center text-[#397ef7] text-2xl font-bold">
             📊
