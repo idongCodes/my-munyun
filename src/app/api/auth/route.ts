@@ -102,6 +102,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: "Invalid verification code. Please try again." });
     }
 
+    if (action === "register_user") {
+      const { firstName, lastName, preferredName, email, mobileNumber, isGoogle } = body;
+      if (!isGoogle && (!firstName || !lastName || !email || !mobileNumber)) {
+        return NextResponse.json({ success: false, message: "Please fill out all required fields." });
+      }
+      await setCredential("user_firstName", firstName || "");
+      await setCredential("user_lastName", lastName || "");
+      await setCredential("user_preferredName", preferredName || firstName || "User");
+      await setCredential("user_email", email || "");
+      await setCredential("user_mobileNumber", mobileNumber || "");
+      await setCredential("user_registered", "true");
+      return NextResponse.json({ success: true, message: "Registration successful!" });
+    }
+
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   } catch (error: any) {
     console.error("Auth API Error:", error);
