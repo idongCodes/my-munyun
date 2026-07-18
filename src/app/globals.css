@@ -1,4 +1,11 @@
+@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+@theme {
+  --font-outfit: 'Outfit', sans-serif;
+  --font-sans: 'Plus Jakarta Sans', sans-serif;
+  --color-brand-blue: #397ef7;
+}
 
 :root {
   --background: #000000;
@@ -24,11 +31,12 @@
 }
 
 body {
-  background-color: var(--background);
-  color: var(--foreground);
+  background-color: #000000 !important;
+  color: #f8fafc !important;
   font-family: 'Plus Jakarta Sans', 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
   overflow-x: hidden;
   -webkit-tap-highlight-color: transparent;
+  min-height: 100vh;
 }
 
 /* Custom Scrollbars */
@@ -49,13 +57,13 @@ body {
 
 /* Mobile First Card System */
 .custom-card {
-  background: var(--card-bg);
+  background: var(--card-bg) !important;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--card-border);
-  border-radius: 16px;
+  border: 1px solid var(--card-border) !important;
+  border-radius: 16px !important;
   padding: 1.25rem;
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.9), 0 0 20px -5px rgba(57, 126, 247, 0.1);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.9), 0 0 20px -5px rgba(57, 126, 247, 0.15) !important;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 @media (min-width: 640px) {
@@ -64,8 +72,8 @@ body {
   }
 }
 .custom-card:hover {
-  border-color: rgba(57, 126, 247, 0.5);
-  box-shadow: 0 15px 35px -5px rgba(57, 126, 247, 0.25);
+  border-color: rgba(57, 126, 247, 0.5) !important;
+  box-shadow: 0 15px 35px -5px rgba(57, 126, 247, 0.3) !important;
   transform: translateY(-2px);
 }
 
@@ -86,13 +94,13 @@ body {
 }
 .form-input:focus {
   border-color: var(--brand-blue) !important;
-  box-shadow: 0 0 0 2px rgba(57, 126, 247, 0.3) !important;
+  box-shadow: 0 0 0 2px rgba(57, 126, 247, 0.4) !important;
   background-color: rgba(30, 30, 38, 0.95) !important;
 }
 
 /* Buttons - #397ef7 Accent */
 .btn-primary {
-  background: linear-gradient(135deg, var(--brand-blue) 0%, var(--brand-blue-dark) 100%) !important;
+  background: linear-gradient(135deg, #397ef7 0%, #2b66d0 100%) !important;
   color: #ffffff !important;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
   border-radius: 12px !important;
@@ -111,7 +119,7 @@ body {
   min-height: 44px;
 }
 .btn-primary:hover {
-  background: linear-gradient(135deg, var(--brand-blue-hover) 0%, var(--brand-blue) 100%) !important;
+  background: linear-gradient(135deg, #5b96ff 0%, #397ef7 100%) !important;
   box-shadow: 0 6px 24px 0 rgba(57, 126, 247, 0.6) !important;
   transform: translateY(-1px);
 }
@@ -120,8 +128,8 @@ body {
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.06) !important;
-  border: 1px solid rgba(57, 126, 247, 0.25) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(57, 126, 247, 0.3) !important;
   color: #ffffff !important;
   border-radius: 12px !important;
   padding: 0.75rem 1.5rem !important;
@@ -138,8 +146,8 @@ body {
   min-height: 44px;
 }
 .btn-secondary:hover {
-  background: rgba(57, 126, 247, 0.15) !important;
-  border-color: var(--brand-blue) !important;
+  background: rgba(57, 126, 247, 0.2) !important;
+  border-color: #397ef7 !important;
   color: #ffffff !important;
 }
 
@@ -169,31 +177,31 @@ body {
 
 /* Badges */
 .badge-demo {
-  background-color: rgba(251, 191, 36, 0.2);
+  background-color: rgba(251, 191, 36, 0.25);
   color: #fef08a;
   padding: 4px 10px;
   border-radius: 8px;
   font-size: 0.75rem;
   font-weight: 700;
-  border: 1px solid rgba(251, 191, 36, 0.4);
+  border: 1px solid rgba(251, 191, 36, 0.5);
 }
 .badge-linked {
-  background-color: rgba(16, 185, 129, 0.2);
+  background-color: rgba(16, 185, 129, 0.25);
   color: #6ee7b7;
   padding: 4px 10px;
   border-radius: 8px;
   font-size: 0.75rem;
   font-weight: 700;
-  border: 1px solid rgba(16, 185, 129, 0.4);
+  border: 1px solid rgba(16, 185, 129, 0.5);
 }
 .badge-unlinked {
-  background-color: rgba(239, 68, 68, 0.2);
+  background-color: rgba(239, 68, 68, 0.25);
   color: #fca5a5;
   padding: 4px 10px;
   border-radius: 8px;
   font-size: 0.75rem;
   font-weight: 700;
-  border: 1px solid rgba(239, 68, 68, 0.4);
+  border: 1px solid rgba(239, 68, 68, 0.5);
 }
 
 /* High Contrast Table Styles */
@@ -201,12 +209,12 @@ body {
   width: 100%;
   border-collapse: collapse;
   margin-top: 0.5rem;
-  background-color: rgba(15, 15, 20, 0.8);
+  background-color: rgba(15, 15, 20, 0.95);
   border-radius: 12px;
   overflow: hidden;
 }
 .custom-table th {
-  background-color: rgba(57, 126, 247, 0.15);
+  background-color: rgba(57, 126, 247, 0.2);
   color: #ffffff;
   font-weight: 700;
   text-align: left;
@@ -214,16 +222,16 @@ body {
   font-size: 0.85rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  border-bottom: 1px solid rgba(57, 126, 247, 0.2);
+  border-bottom: 1px solid rgba(57, 126, 247, 0.3);
 }
 .custom-table td {
   padding: 0.875rem 1rem;
   font-size: 0.875rem;
   color: #e2e8f0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 .custom-table tr:hover td {
-  background-color: rgba(57, 126, 247, 0.08);
+  background-color: rgba(57, 126, 247, 0.12);
   color: #ffffff;
 }
 
