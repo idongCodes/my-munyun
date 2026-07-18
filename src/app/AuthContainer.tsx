@@ -23,8 +23,7 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
   const [show2faSetup, setShow2faSetup] = useState(false);
 
   // Login form states
-  const [authMethod, setAuthMethod] = useState<'passcode' | 'totp' | 'sms'>('passcode');
-  const [passcode, setPasscode] = useState('');
+  const [authMethod, setAuthMethod] = useState<'totp' | 'sms'>('totp');
   const [totpCode, setTotpCode] = useState('');
   const [phone, setPhone] = useState('');
   const [smsCode, setSmsCode] = useState('');
@@ -137,30 +136,6 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
       setTimeout(() => completeLogin(), 600);
     } catch {
       completeLogin();
-    }
-  };
-
-  const handlePasscodeLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setAuthError('');
-    try {
-      const res = await fetch('/api/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'passcode', passcode })
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        completeLogin();
-      } else {
-        setAuthError(data.message || 'Incorrect passcode. (Demo default: admin)');
-      }
-    } catch {
-      if (passcode === 'admin' || passcode === '1234') {
-        completeLogin();
-      } else {
-        setAuthError('Incorrect passcode. (Demo default: admin)');
-      }
     }
   };
 
@@ -538,34 +513,12 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
                   }}
                   className="form-input cursor-pointer py-3.5 px-4 text-sm"
                 >
-                  <option value="passcode">Passcode Login</option>
                   <option value="totp">Authenticator Code</option>
                   <option value="sms">SMS Verification</option>
                 </select>
               </div>
 
-              {/* Flow 1: Passcode */}
-              {authMethod === 'passcode' && (
-                <form onSubmit={handlePasscodeLogin} className="space-y-5 sm:space-y-6">
-                  <div className="space-y-3">
-                    <label className="block text-xs uppercase font-bold text-slate-200 tracking-wider">
-                      Passcode
-                    </label>
-                    <input 
-                      type="password" 
-                      placeholder="••••" 
-                      value={passcode}
-                      onChange={(e) => setPasscode(e.target.value)}
-                      className="form-input text-center text-xl tracking-widest py-3.5" 
-                    />
-                  </div>
-                  <button type="submit" className="btn-primary w-full py-3.5 text-sm font-bold">
-                    Authenticate
-                  </button>
-                </form>
-              )}
-
-              {/* Flow 2: TOTP */}
+              {/* Flow 1: TOTP */}
               {authMethod === 'totp' && (
                 <form onSubmit={handleTotpLogin} className="space-y-5 sm:space-y-6">
                   <div className="space-y-3">
@@ -586,7 +539,7 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
                 </form>
               )}
 
-              {/* Flow 3: SMS */}
+              {/* Flow 2: SMS */}
               {authMethod === 'sms' && (
                 <div className="space-y-5 sm:space-y-6">
                   {!smsSent ? (
@@ -661,17 +614,15 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
               )}
 
               {/* Link to Register Account */}
-              {authMethod === 'passcode' && (
-                <div className="border-t border-zinc-800/90 pt-6 mt-6 flex flex-col items-center gap-3">
-                  <span className="text-xs text-slate-300 font-semibold uppercase tracking-widest">or</span>
-                  <Link 
-                    href="/register"
-                    className="btn-secondary w-full text-xs py-3 font-semibold text-center block"
-                  >
-                    ✨ Register a New Account
-                  </Link>
-                </div>
-              )}
+              <div className="border-t border-zinc-800/90 pt-6 mt-6 flex flex-col items-center gap-3">
+                <span className="text-xs text-slate-300 font-semibold uppercase tracking-widest">or</span>
+                <Link 
+                  href="/register"
+                  className="btn-secondary w-full text-xs py-3 font-semibold text-center block"
+                >
+                  ✨ Register a New Account
+                </Link>
+              </div>
             </div>
           )}
         </div>
