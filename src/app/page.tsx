@@ -646,8 +646,8 @@ export default function Home() {
   // --- Render Splash Screen (Conditional Return AFTER all hooks) ---
   if (isSplashActive) {
     return (
-      <div className="fixed inset-0 bg-black flex flex-col justify-center items-center z-50 animate-splash p-6 sm:p-12 border border-red-500">
-        <div className="flex flex-col items-center justify-center text-center max-w-lg mx-auto w-full border border-red-500 p-2">
+      <div className="fixed inset-0 h-screen min-h-screen h-[100vh] min-h-[100vh] w-screen min-w-screen w-[100vw] bg-black flex flex-col justify-center items-center z-50 animate-splash p-6 sm:p-12 border border-red-500">
+        <div className="flex flex-col items-center justify-center text-center max-w-lg mx-auto w-full h-full border border-red-500 p-2">
           {/* Main Title Heading */}
           <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white font-outfit leading-tight mb-10 sm:mb-14 border border-red-500 px-4 py-2">
             💸 My <span className="text-[#397ef7]">Munyun</span>
