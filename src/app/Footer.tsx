@@ -63,21 +63,21 @@ export default function Footer() {
     <footer className="w-full border-t border-slate-800/80 bg-slate-950/90 backdrop-blur-md py-6 px-4 text-center text-xs text-slate-400 font-sans tracking-wide z-40">
       <div className="max-w-7xl mx-auto flex flex-col items-center gap-4 px-4">
         {/* Navigation Icons Only Row with Custom Tooltips */}
-        <nav className="flex items-center justify-center gap-8 sm:gap-12 border-b border-slate-800/60 pb-4 w-full">
+        <nav className="flex items-center justify-center gap-4 sm:gap-6 border-b border-slate-800/60 pb-4 w-full">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isTooltipVisible = activeTooltip === item.name;
 
             const content = (
               <div 
-                className="relative group p-2.5 rounded-xl hover:bg-slate-900/80 transition-all cursor-pointer active:scale-95"
+                className="relative group p-2 rounded-xl hover:bg-slate-900/80 transition-all cursor-pointer active:scale-95"
                 onTouchStart={() => handleTouchStart(item.name)}
                 onTouchEnd={handleTouchEnd}
                 onMouseDown={() => handleTouchStart(item.name)}
                 onMouseUp={handleTouchEnd}
                 onMouseLeave={handleTouchEnd}
               >
-                <Icon size={19} className="text-[#397ef7] group-hover:scale-110 transition-transform" />
+                <Icon size={24} className="text-[#397ef7] group-hover:scale-110 transition-transform" />
                 
                 {/* Floating Custom Tooltip */}
                 <div 
