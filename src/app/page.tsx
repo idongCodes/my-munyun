@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { 
   Lock, RefreshCw, Key, Shield, User, FileText, CheckCircle, 
   XCircle, Smartphone, AlertCircle, Edit, Trash2, LayoutDashboard,
-  LogOut, Plus, ChevronRight, Info, Search, HelpCircle
+  LogOut, Plus, ChevronRight, Info, Search, HelpCircle, Settings
 } from 'lucide-react';
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -70,6 +70,7 @@ export default function Home() {
   // Sync / Action loadings
   const [isSyncing, setIsSyncing] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
   // Session Load and Restore
   useEffect(() => {
@@ -643,11 +644,11 @@ export default function Home() {
       <div className="fixed inset-0 bg-black flex flex-col justify-center items-center z-50 animate-splash">
         <div className="flex flex-col items-center text-center">
           <div className="text-5xl sm:text-6xl font-bold tracking-tight text-white mb-6 font-outfit">
-            <span className="text-blue-500">💸</span> Munyun
+            💸 My Munyun
           </div>
           <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-6"></div>
           <div className="text-xs font-semibold text-gray-400 tracking-widest uppercase">
-            SECURELY SYNCING WEALTH...
+            Your Digital Munyun Advisor 💰️
           </div>
         </div>
       </div>
@@ -661,9 +662,9 @@ export default function Home() {
         <div className="w-full max-w-md animate-login-instant">
           <div className="text-center mb-8">
             <div className="text-4xl font-bold tracking-tight text-white mb-2 font-outfit">
-              <span className="text-blue-500">💸</span> Munyun
+              💸 My Munyun
             </div>
-            <div className="text-xs uppercase tracking-widest text-gray-500 font-bold">
+            <div className="text-xs uppercase tracking-widest text-zinc-500 font-bold">
               Secure Wealth Portal
             </div>
           </div>
