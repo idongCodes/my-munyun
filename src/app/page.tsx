@@ -20,9 +20,18 @@ const CATEGORY_COLORS: Record<string, string> = {
   Uncategorized: '#9ca3af'
 };
 
+const CLI_MESSAGES = [
+  "initializing quantum_munyun_engine.sh ... [OK]",
+  "establishing encrypted link to BofA mainframe ... [CONNECTED]",
+  "scanning cash app transaction frequency ... [SECURE]",
+  "calculating inflation defense matrix ... [99.9% SHIELD]",
+  "compiling digital munyun ledger ... [READY]"
+];
+
 export default function Home() {
   // Splash screen state
   const [isSplashActive, setIsSplashActive] = useState(true);
+  const [cliIndex, setCliIndex] = useState(0);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginTime, setLoginTime] = useState<string | null>(null);
 
@@ -71,6 +80,7 @@ export default function Home() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   // Session Load and Restore
   useEffect(() => {
@@ -96,13 +106,22 @@ export default function Home() {
       console.error("Error reading sessionStorage:", e);
     }
     
-    // Standard splash timeout if not restored
+    // Standard splash timeout if not restored (extended to 6s)
     const timer = setTimeout(() => {
       setIsSplashActive(false);
-    }, 3000);
+    }, 6000);
     
     return () => clearTimeout(timer);
   }, []);
+
+  // Witty CLI rotator effect on splash screen (rotates every 1.1s)
+  useEffect(() => {
+    if (!isSplashActive) return;
+    const interval = setInterval(() => {
+      setCliIndex((prev) => (prev + 1) % CLI_MESSAGES.length);
+    }, 1100);
+    return () => clearInterval(interval);
+  }, [isSplashActive]);
 
   // Fetch Dashboard data once logged in
   useEffect(() => {
@@ -132,6 +151,120 @@ export default function Home() {
       console.error("Error fetching dashboard data:", e);
     }
   };
+
+  // --- Calculations for Overview Analytics (Hooks must be called unconditionally at top) ---
+  const totalBalance = useMemo(() => {
+    return accounts.reduce((sum, acc) => sum + (acc.balance_available ?? acc.balance_current ?? 0), 0);
+  }, [accounts]);
+
+  const bofABalance = useMemo(() => {
+    return accounts
+      .filter(acc => acc.institution === "Bank of America")
+      .reduce((sum, acc) => sum + (acc.balance_available ?? acc.balance_current ?? 0), 0);
+  }, [accounts]);
+
+  const cashAppBalance = useMemo(() => {
+    return accounts
+      .filter(acc => acc.institution.includes("Cash App"))
+      .reduce((sum, acc) => sum + (acc.balance_available ?? acc.balance_current ?? 0), 0);
+  }, [accounts]);
+
+  // Expenses data calculation for Pie Chart
+  const expenseSummary = useMemo(() => {
+    const expenses = transactions.filter(t => t.amount > 0 && t.category !== 'Income');
+    const categoriesMap: Record<string, number> = {};
+    let totalExpensesSum = 0;
+
+    expenses.forEach(t => {
+      const cat = t.category || 'Uncategorized';
+      categoriesMap[cat] = (categoriesMap[cat] || 0) + t.amount;
+      totalExpensesSum += t.amount;
+    });
+
+    const slices = Object.entries(categoriesMap).map(([category, amount]) => ({
+      category,
+      amount,
+      percentage: totalExpensesSum > 0 ? amount / totalExpensesSum : 0,
+      color: CATEGORY_COLORS[category] || CATEGORY_COLORS.Other
+    })).sort((a, b) => b.amount - a.amount);
+
+    return { slices, totalExpensesSum };
+  }, [transactions]);
+
+  // Balance history calculation for Spline Line Chart
+  const balanceHistory = useMemo(() => {
+    if (transactions.length === 0) return [];
+    
+    // Sort transactions chronologically
+    const sorted = [...transactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    
+    // Group transactions by date
+    const dailyMap: Record<string, number> = {};
+    sorted.forEach(t => {
+      const dateStr = t.date;
+      dailyMap[dateStr] = (dailyMap[dateStr] || 0) - t.amount;
+    });
+
+    const dailyChanges = Object.entries(dailyMap).map(([date, change]) => ({
+      date,
+      change
+    })).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    // Back-calculate historical balances starting from the current total balance
+    const history: { date: string; balance: number }[] = [];
+    let currentCalc = totalBalance;
+    
+    // Process backwards to calculate the previous points
+    for (let i = dailyChanges.length - 1; i >= 0; i--) {
+      history.unshift({
+        date: dailyChanges[i].date,
+        balance: currentCalc
+      });
+      currentCalc -= dailyChanges[i].change;
+    }
+
+    return history;
+  }, [transactions, totalBalance]);
+
+  // Filtered transactions for Ledger
+  const filteredTxs = useMemo(() => {
+    return transactions.filter(t => {
+      const matchesSearch = t.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                            (t.notes || '').toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = categoryFilter === 'All' || t.category === categoryFilter;
+      const matchesInstitution = institutionFilter === 'All' || t.institution === institutionFilter;
+      return matchesSearch && matchesCategory && matchesInstitution;
+    });
+  }, [transactions, searchQuery, categoryFilter, institutionFilter]);
+
+  // Cash App transaction lists and flows
+  const cashAppTxs = useMemo(() => {
+    return transactions.filter(t => t.institution.includes("Cash App"));
+  }, [transactions]);
+
+  const cashAppFlow = useMemo(() => {
+    let sent = 0;
+    let received = 0;
+    cashAppTxs.forEach(t => {
+      if (t.amount > 0) {
+        sent += t.amount;
+      } else {
+        received += Math.abs(t.amount);
+      }
+    });
+    return { sent, received, net: received - sent };
+  }, [cashAppTxs]);
+
+  // Dropdown list contents for ledger filters
+  const uniqueCategories = useMemo(() => {
+    const cats = new Set(transactions.map(t => t.category).filter(Boolean));
+    return ['All', ...Array.from(cats)];
+  }, [transactions]);
+
+  const uniqueInstitutions = useMemo(() => {
+    const insts = new Set(transactions.map(t => t.institution).filter(Boolean));
+    return ['All', ...Array.from(insts)];
+  }, [transactions]);
 
   // Auth submission handlers
   const handlePasscodeLogin = async (e: React.FormEvent) => {
@@ -234,7 +367,6 @@ export default function Home() {
       const data = await res.json();
       if (data.success) {
         setTotpSetupSecret(data.secret);
-        // Build QR server URL using API
         const provisioningUri = encodeURIComponent(data.qrProvisioningUri);
         setTotpSetupQr(`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${provisioningUri}&color=4e80e4&bgcolor=000000`);
         setIsSettingUpTotp(true);
@@ -293,7 +425,6 @@ export default function Home() {
       const dataLink = await resLink.json();
 
       if (dataLink.link_token === "mock_link_token") {
-        // Run simulated public token exchange
         await fetch('/api/exchange_public_token', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -365,123 +496,6 @@ export default function Home() {
     }
   };
 
-  // --- Calculations for Overview Analytics ---
-  const totalBalance = useMemo(() => {
-    return accounts.reduce((sum, acc) => sum + (acc.balance_available ?? acc.balance_current ?? 0), 0);
-  }, [accounts]);
-
-  const bofABalance = useMemo(() => {
-    return accounts
-      .filter(acc => acc.institution === "Bank of America")
-      .reduce((sum, acc) => sum + (acc.balance_available ?? acc.balance_current ?? 0), 0);
-  }, [accounts]);
-
-  const cashAppBalance = useMemo(() => {
-    return accounts
-      .filter(acc => acc.institution.includes("Cash App"))
-      .reduce((sum, acc) => sum + (acc.balance_available ?? acc.balance_current ?? 0), 0);
-  }, [accounts]);
-
-  // Expenses data calculation for Pie Chart
-  const expenseSummary = useMemo(() => {
-    const expenses = transactions.filter(t => t.amount > 0 && t.category !== 'Income');
-    const categoriesMap: Record<string, number> = {};
-    let totalExpensesSum = 0;
-
-    expenses.forEach(t => {
-      const cat = t.category || 'Uncategorized';
-      categoriesMap[cat] = (categoriesMap[cat] || 0) + t.amount;
-      totalExpensesSum += t.amount;
-    });
-
-    const slices = Object.entries(categoriesMap).map(([category, amount]) => ({
-      category,
-      amount,
-      percentage: totalExpensesSum > 0 ? amount / totalExpensesSum : 0,
-      color: CATEGORY_COLORS[category] || CATEGORY_COLORS.Other
-    })).sort((a, b) => b.amount - a.amount);
-
-    return { slices, totalExpensesSum };
-  }, [transactions]);
-
-  // Balance history calculation for Spline Line Chart
-  const balanceHistory = useMemo(() => {
-    if (transactions.length === 0) return [];
-    
-    // Sort transactions chronologically
-    const sorted = [...transactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    
-    // Group transactions by date
-    const dailyMap: Record<string, number> = {};
-    sorted.forEach(t => {
-      // In Plaid format: amount is positive for expense/debit, negative for credit/income
-      // So transaction daily change = -amount
-      const dateStr = t.date;
-      dailyMap[dateStr] = (dailyMap[dateStr] || 0) - t.amount;
-    });
-
-    const dailyChanges = Object.entries(dailyMap).map(([date, change]) => ({
-      date,
-      change
-    })).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-    // Back-calculate historical balances starting from the current total balance
-    const history: { date: string; balance: number }[] = [];
-    let currentCalc = totalBalance;
-    
-    // Process backwards to calculate the previous points
-    for (let i = dailyChanges.length - 1; i >= 0; i--) {
-      history.unshift({
-        date: dailyChanges[i].date,
-        balance: currentCalc
-      });
-      currentCalc -= dailyChanges[i].change;
-    }
-
-    return history;
-  }, [transactions, totalBalance]);
-
-  // Filtered transactions for Ledger
-  const filteredTxs = useMemo(() => {
-    return transactions.filter(t => {
-      const matchesSearch = t.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                            (t.notes || '').toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = categoryFilter === 'All' || t.category === categoryFilter;
-      const matchesInstitution = institutionFilter === 'All' || t.institution === institutionFilter;
-      return matchesSearch && matchesCategory && matchesInstitution;
-    });
-  }, [transactions, searchQuery, categoryFilter, institutionFilter]);
-
-  // Cash App transaction lists and flows
-  const cashAppTxs = useMemo(() => {
-    return transactions.filter(t => t.institution.includes("Cash App"));
-  }, [transactions]);
-
-  const cashAppFlow = useMemo(() => {
-    let sent = 0;
-    let received = 0;
-    cashAppTxs.forEach(t => {
-      if (t.amount > 0) {
-        sent += t.amount;
-      } else {
-        received += Math.abs(t.amount);
-      }
-    });
-    return { sent, received, net: received - sent };
-  }, [cashAppTxs]);
-
-  // Dropdown list contents for ledger filters
-  const uniqueCategories = useMemo(() => {
-    const cats = new Set(transactions.map(t => t.category).filter(Boolean));
-    return ['All', ...Array.from(cats)];
-  }, [transactions]);
-
-  const uniqueInstitutions = useMemo(() => {
-    const insts = new Set(transactions.map(t => t.institution).filter(Boolean));
-    return ['All', ...Array.from(insts)];
-  }, [transactions]);
-
-
   // SVG Area Chart drawing helper
   const drawAreaChart = () => {
     if (balanceHistory.length < 2) return null;
@@ -500,7 +514,6 @@ export default function Home() {
     const minBal = Math.min(...balances, 0);
     const balRange = maxBal - minBal || 1;
 
-    // Build path coordinates
     const points = balanceHistory.map((h, i) => {
       const x = paddingLeft + (i / (balanceHistory.length - 1)) * graphWidth;
       const y = paddingTop + graphHeight - ((h.balance - minBal) / balRange) * graphHeight;
@@ -510,7 +523,6 @@ export default function Home() {
     const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
     const areaPath = `${linePath} L ${points[points.length - 1].x} ${paddingTop + graphHeight} L ${points[0].x} ${paddingTop + graphHeight} Z`;
 
-    // Horizontal grid lines
     const gridLines = [];
     for (let i = 0; i <= 4; i++) {
       const yVal = minBal + (i / 4) * balRange;
@@ -522,12 +534,11 @@ export default function Home() {
       <svg viewBox={`0 0 ${width} ${height}`} width="100%" height="220" className="overflow-visible">
         <defs>
           <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#4e80e4" stopOpacity="0.35" />
-            <stop offset="100%" stopColor="#4e80e4" stopOpacity="0.0" />
+            <stop offset="0%" stopColor="#397ef7" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="#397ef7" stopOpacity="0.0" />
           </linearGradient>
         </defs>
         
-        {/* Grid lines */}
         {gridLines.map((line, i) => (
           <g key={i}>
             <line 
@@ -535,7 +546,7 @@ export default function Home() {
               y1={line.y} 
               x2={width - paddingRight} 
               y2={line.y} 
-              stroke="rgba(255,255,255,0.06)" 
+              stroke="rgba(255,255,255,0.08)" 
               strokeWidth="1" 
             />
             <text 
@@ -550,19 +561,15 @@ export default function Home() {
           </g>
         ))}
 
-        {/* Gradient Area */}
         <path d={areaPath} fill="url(#areaGrad)" />
-        
-        {/* Line */}
-        <path d={linePath} fill="none" stroke="#4e80e4" strokeWidth="2" strokeLinecap="round" />
+        <path d={linePath} fill="none" stroke="#397ef7" strokeWidth="2" strokeLinecap="round" />
 
-        {/* Date labels on X axis */}
         {points.length > 1 && [points[0], points[Math.floor(points.length / 2)], points[points.length - 1]].map((p, idx) => (
           <text
             key={idx}
             x={p.x}
             y={height - 8}
-            fill="#9ca3af"
+            fill="#cbd5e1"
             fontSize="10"
             textAnchor={idx === 0 ? "start" : idx === 2 ? "end" : "middle"}
           >
@@ -577,9 +584,9 @@ export default function Home() {
   const drawDoughnutChart = () => {
     if (expenseSummary.totalExpensesSum === 0) {
       return (
-        <div className="flex flex-col items-center justify-center h-48 text-gray-500">
-          <HelpCircle size={32} className="mb-2" />
-          <p className="text-sm">No expenses in this period</p>
+        <div className="flex flex-col items-center justify-center h-48 text-slate-300">
+          <HelpCircle size={32} className="mb-2 text-[#397ef7]" />
+          <p className="text-sm font-semibold">No expenses in this period</p>
         </div>
       );
     }
@@ -614,20 +621,19 @@ export default function Home() {
             })}
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-xs uppercase text-gray-400 font-semibold tracking-wider">Total Spent</span>
+            <span className="text-xs uppercase text-slate-300 font-bold tracking-wider">Total Spent</span>
             <span className="text-lg font-bold text-white">${expenseSummary.totalExpensesSum.toFixed(2)}</span>
           </div>
         </div>
         
-        {/* Legends list */}
         <div className="flex-1 space-y-2 max-h-48 overflow-y-auto w-full pr-2">
           {expenseSummary.slices.map((slice, idx) => (
             <div key={idx} className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: slice.color }}></span>
-                <span className="text-gray-300 font-medium">{slice.category}</span>
+                <span className="text-slate-200 font-medium">{slice.category}</span>
               </div>
-              <span className="text-white font-semibold">
+              <span className="text-white font-bold">
                 ${slice.amount.toFixed(2)} ({(slice.percentage * 100).toFixed(1)}%)
               </span>
             </div>
@@ -637,23 +643,44 @@ export default function Home() {
     );
   };
 
-
-  // --- Render Splash Screen ---
+  // --- Render Splash Screen (Conditional Return AFTER all hooks) ---
   if (isSplashActive) {
     return (
-      <div className="fixed inset-0 bg-black flex flex-col justify-center items-center z-50 animate-splash">
-        <div className="flex flex-col items-center text-center">
-          <div className="text-5xl sm:text-6xl font-bold tracking-tight text-white mb-6 font-outfit">
-            💸 My Munyun
+      <div className="fixed inset-0 h-screen min-h-screen h-[100vh] min-h-[100vh] w-screen min-w-screen w-[100vw] bg-black flex flex-col justify-center items-center z-50 animate-splash p-6 sm:p-12 border border-red-500">
+        <div className="flex flex-col items-center justify-center gap-2.5 sm:gap-3.5 text-center max-w-lg mx-auto w-full h-full border border-red-500 p-2">
+          {/* Main Title Heading */}
+          <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white font-outfit leading-tight border border-red-500 px-4 py-2">
+            💸 My <span className="text-[#397ef7]">Munyun</span>
+          </h1>
+          
+          {/* Subheading Advisor Badge */}
+          <div className="border border-red-500 p-1">
+            <p className="text-xs sm:text-sm font-bold text-slate-200 tracking-[0.2em] uppercase bg-[#397ef7]/10 px-7 py-3 rounded-full border border-red-500 shadow-[0_0_25px_rgba(57,126,247,0.25)] inline-block">
+              Your Digital Munyun Advisor 💰️
+            </p>
           </div>
-          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-6"></div>
-          <div className="text-xs font-semibold text-gray-400 tracking-widest uppercase">
-            Your Digital Munyun Advisor 💰️
+
+          {/* Witty CLI Terminal Box */}
+          <div className="w-full max-w-md bg-slate-950/95 border border-red-500 rounded-2xl p-5 sm:p-6 shadow-[0_0_35px_rgba(57,126,247,0.2)] text-left font-mono text-xs sm:text-sm">
+            <div className="flex items-center gap-2 mb-3 border-b border-red-500 pb-2.5">
+              <span className="w-3 h-3 rounded-full bg-red-500/80 inline-block border border-red-500"></span>
+              <span className="w-3 h-3 rounded-full bg-yellow-500/80 inline-block border border-red-500"></span>
+              <span className="w-3 h-3 rounded-full bg-green-500/80 inline-block border border-red-500"></span>
+              <span className="text-[10px] text-slate-400 font-sans ml-auto uppercase tracking-wider font-semibold border border-red-500 px-1">munyun-cli v2.4</span>
+            </div>
+            <div className="text-[#397ef7] font-semibold flex items-center gap-2.5 min-h-[42px] px-1 border border-red-500">
+              <span className="text-emerald-400 font-bold text-base border border-red-500 px-1">$</span>
+              <span className="text-slate-100 flex-1 leading-relaxed border border-red-500 px-1">{CLI_MESSAGES[cliIndex]}</span>
+              <span className="w-2 h-4 bg-[#397ef7] animate-pulse inline-block rounded-xs border border-red-500"></span>
+            </div>
           </div>
         </div>
       </div>
     );
   }
+
+
+
 
   // --- Render Auth Screens ---
   if (!isLoggedIn) {
@@ -661,31 +688,31 @@ export default function Home() {
       <div className="min-h-screen bg-black flex items-center justify-center p-4">
         <div className="w-full max-w-md animate-login-instant">
           <div className="text-center mb-8">
-            <div className="text-4xl font-bold tracking-tight text-white mb-2 font-outfit">
-              💸 My Munyun
+            <div className="text-4xl font-extrabold tracking-tight text-white mb-2 font-outfit">
+              💸 My <span className="text-[#397ef7]">Munyun</span>
             </div>
-            <div className="text-xs uppercase tracking-widest text-zinc-500 font-bold">
+            <div className="text-xs uppercase tracking-widest text-slate-300 font-bold">
               Secure Wealth Portal
             </div>
           </div>
 
-          <div className="custom-card relative overflow-hidden">
+          <div className="custom-card relative overflow-hidden border-[#397ef7]/30 shadow-[0_0_30px_rgba(57,126,247,0.15)]">
             {/* SETUP TOTP WIZARD */}
             {isSettingUpTotp ? (
               <div className="space-y-6">
                 <div className="flex items-center gap-2 mb-2 text-xl font-bold text-white">
-                  <Lock className="text-blue-500" />
+                  <Lock className="text-[#397ef7]" />
                   <span>Setup 2FA (Google Authenticator)</span>
                 </div>
                 
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-slate-200">
                   Scan the QR code below using your Google Authenticator app on your phone, then enter the verification code.
                 </p>
 
                 {totpSetupQr && (
-                  <div className="flex flex-col items-center py-4 bg-gray-950/40 rounded-xl border border-gray-900">
-                    <img src={totpSetupQr} alt="QR Code" className="border-4 border-gray-900 rounded-xl mb-4" />
-                    <code className="text-xs bg-gray-950 px-3 py-1.5 rounded-lg border border-gray-800 text-blue-400">
+                  <div className="flex flex-col items-center py-4 bg-zinc-950/80 rounded-xl border border-zinc-800">
+                    <img src={totpSetupQr} alt="QR Code" className="border-4 border-zinc-800 rounded-xl mb-4" />
+                    <code className="text-xs bg-zinc-950 px-3 py-1.5 rounded-lg border border-zinc-700 text-[#397ef7] font-mono font-bold">
                       Secret Key: {totpSetupSecret}
                     </code>
                   </div>
@@ -693,12 +720,12 @@ export default function Home() {
 
                 {totpSetupSuccess ? (
                   <div className="space-y-4">
-                    <div className="bg-emerald-950/20 border border-emerald-900 text-emerald-400 p-3.5 rounded-xl text-xs flex gap-2">
+                    <div className="bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 p-3.5 rounded-xl text-xs flex gap-2">
                       <CheckCircle className="flex-shrink-0" />
                       <div>
-                        <strong>Google Authenticator verification successful!</strong>
-                        <p className="mt-1">Add this variable to your .env file or deployment configuration:</p>
-                        <pre className="mt-1 bg-black/60 p-2 rounded-lg border border-emerald-900/40 text-emerald-300 select-all">
+                        <strong className="text-white">Google Authenticator verification successful!</strong>
+                        <p className="mt-1 text-slate-200">Add this variable to your .env file or deployment configuration:</p>
+                        <pre className="mt-1 bg-black/80 p-2 rounded-lg border border-emerald-500/30 text-emerald-300 select-all font-mono">
                           TOTP_SECRET={totpSetupSecret}
                         </pre>
                       </div>
@@ -717,7 +744,7 @@ export default function Home() {
                 ) : (
                   <form onSubmit={handleSetupTotpVerify} className="space-y-4">
                     <div>
-                      <label className="block text-xs uppercase font-semibold text-gray-400 mb-2">
+                      <label className="block text-xs uppercase font-bold text-slate-200 mb-2">
                         Enter 6-digit Verification Code
                       </label>
                       <input 
@@ -730,7 +757,7 @@ export default function Home() {
                     </div>
                     
                     {authError && (
-                      <div className="bg-rose-950/20 border border-rose-900 text-rose-400 p-3 rounded-xl text-xs flex gap-2">
+                      <div className="bg-rose-950/40 border border-rose-500/40 text-rose-300 p-3 rounded-xl text-xs flex gap-2">
                         <AlertCircle className="flex-shrink-0" size={16} />
                         <span>{authError}</span>
                       </div>
@@ -759,7 +786,7 @@ export default function Home() {
               <div className="space-y-6">
                 {/* Method selector */}
                 <div className="space-y-2">
-                  <label className="block text-xs uppercase font-semibold text-gray-400">
+                  <label className="block text-xs uppercase font-bold text-slate-200">
                     Authentication Method
                   </label>
                   <select 
@@ -781,7 +808,7 @@ export default function Home() {
                 {authMethod === 'passcode' && (
                   <form onSubmit={handlePasscodeLogin} className="space-y-4">
                     <div className="space-y-2">
-                      <label className="block text-xs uppercase font-semibold text-gray-400">
+                      <label className="block text-xs uppercase font-bold text-slate-200">
                         Passcode
                       </label>
                       <input 
@@ -802,7 +829,7 @@ export default function Home() {
                 {authMethod === 'totp' && (
                   <form onSubmit={handleTotpLogin} className="space-y-4">
                     <div className="space-y-2">
-                      <label className="block text-xs uppercase font-semibold text-gray-400">
+                      <label className="block text-xs uppercase font-bold text-slate-200">
                         Google Authenticator Code
                       </label>
                       <input 
@@ -825,7 +852,7 @@ export default function Home() {
                     {!smsSent ? (
                       <form onSubmit={handleSmsRequest} className="space-y-4">
                         <div className="space-y-2">
-                          <label className="block text-xs uppercase font-semibold text-gray-400">
+                          <label className="block text-xs uppercase font-bold text-slate-200">
                             Phone Number
                           </label>
                           <input 
@@ -842,11 +869,11 @@ export default function Home() {
                       </form>
                     ) : (
                       <form onSubmit={handleSmsVerify} className="space-y-4">
-                        <div className="space-y-2 text-xs text-gray-400">
-                          Code sent to <strong>{phone}</strong>
+                        <div className="space-y-2 text-xs text-slate-200">
+                          Code sent to <strong className="text-white">{phone}</strong>
                         </div>
                         <div className="space-y-2">
-                          <label className="block text-xs uppercase font-semibold text-gray-400">
+                          <label className="block text-xs uppercase font-bold text-slate-200">
                             Enter 6-digit SMS Code
                           </label>
                           <input 
@@ -879,14 +906,14 @@ export default function Home() {
 
                 {/* Feedback messages */}
                 {authError && (
-                  <div className="bg-rose-950/20 border border-rose-900 text-rose-400 p-3.5 rounded-xl text-xs flex gap-2">
+                  <div className="bg-rose-950/40 border border-rose-500/40 text-rose-300 p-3.5 rounded-xl text-xs flex gap-2">
                     <AlertCircle className="flex-shrink-0" size={16} />
                     <span>{authError}</span>
                   </div>
                 )}
 
                 {authSuccessMsg && (
-                  <div className="bg-emerald-950/20 border border-emerald-900 text-emerald-400 p-3.5 rounded-xl text-xs flex gap-2">
+                  <div className="bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 p-3.5 rounded-xl text-xs flex gap-2">
                     <CheckCircle className="flex-shrink-0" size={16} />
                     <span>{authSuccessMsg}</span>
                   </div>
@@ -894,8 +921,8 @@ export default function Home() {
 
                 {/* TOTP Setup Button */}
                 {authMethod === 'passcode' && (
-                  <div className="border-t border-gray-900 pt-4 flex flex-col items-center">
-                    <span className="text-xs text-gray-500 mb-3">or</span>
+                  <div className="border-t border-zinc-800 pt-4 flex flex-col items-center">
+                    <span className="text-xs text-slate-300 font-semibold mb-3">or</span>
                     <button 
                       onClick={handleSetupTotpStart}
                       className="btn-secondary w-full text-xs py-2"
@@ -908,7 +935,7 @@ export default function Home() {
             )}
           </div>
           
-          <div className="text-center mt-6 text-[10px] text-gray-500 tracking-wider">
+          <div className="text-center mt-6 text-xs text-slate-300 tracking-wider font-semibold">
             PROTECTED BY AES-256 LOCAL DATABASE ENCRYPTION.
           </div>
         </div>
@@ -919,28 +946,44 @@ export default function Home() {
   // --- Render Dashboard App ---
   return (
     <div className="min-h-screen bg-black flex flex-col md:flex-row">
-      {/* SIDEBAR */}
-      <aside className="w-full md:w-64 bg-gray-950 border-b md:border-b-0 md:border-r border-gray-900 p-6 flex flex-col flex-shrink-0">
-        <div className="text-center md:text-left mb-6">
-          <div className="text-2xl font-bold tracking-tight text-white mb-1 font-outfit">
-            <span className="text-blue-500">💸</span> Munyun
+      {/* MOBILE TOP HEADER BAR */}
+      <div className="md:hidden flex items-center justify-between p-4 bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800 sticky top-0 z-40">
+        <div className="flex items-center gap-2">
+          <span className="text-xl">💸</span>
+          <span className="text-xl font-extrabold text-white font-outfit">
+            My <span className="text-[#397ef7]">Munyun</span>
+          </span>
+        </div>
+        <button 
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="btn-secondary py-1.5 px-3 text-xs flex items-center gap-1.5 font-bold"
+        >
+          {isMobileMenuOpen ? "Close Menu ✕" : "Controls ⚙️"}
+        </button>
+      </div>
+
+      {/* SIDEBAR / CONTROL PANEL */}
+      <aside className={`${isMobileMenuOpen ? 'block' : 'hidden'} md:block w-full md:w-64 bg-zinc-950 border-b md:border-b-0 md:border-r border-zinc-800 p-4 sm:p-6 flex flex-col flex-shrink-0 z-30 transition-all`}>
+        <div className="hidden md:block text-left mb-6">
+          <div className="text-2xl font-extrabold tracking-tight text-white mb-1 font-outfit">
+            💸 My <span className="text-[#397ef7]">Munyun</span>
           </div>
-          <div className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">
+          <div className="text-[10px] uppercase tracking-widest text-slate-300 font-bold">
             Personal Wealth Aggregator
           </div>
         </div>
 
-        <hr className="border-gray-900 my-4" />
+        <hr className="border-zinc-800 my-4 hidden md:block" />
 
         {/* Plaid connection badges */}
         <div className="space-y-4 my-2">
-          <div className="text-xs uppercase text-gray-400 font-bold tracking-wider">
+          <div className="text-xs uppercase text-slate-300 font-bold tracking-wider">
             Connection Status
           </div>
           {status && (
             <div className="space-y-2 text-xs">
               <div className="flex items-center justify-between">
-                <span className="text-gray-300">Bank of America:</span>
+                <span className="text-slate-200 font-medium">Bank of America:</span>
                 {status.use_mock_data ? (
                   <span className="badge-demo">DEMO MODE</span>
                 ) : status.boa_linked ? (
@@ -950,7 +993,7 @@ export default function Home() {
                 )}
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-gray-300">Cash App:</span>
+                <span className="text-slate-200 font-medium">Cash App:</span>
                 {status.use_mock_data ? (
                   <span className="badge-demo">DEMO MODE</span>
                 ) : status.cashapp_linked ? (
@@ -963,25 +1006,31 @@ export default function Home() {
           )}
         </div>
 
-        <hr className="border-gray-900 my-4" />
+        <hr className="border-zinc-800 my-4" />
 
         {/* Actions */}
         <div className="space-y-3">
-          <div className="text-xs uppercase text-gray-400 font-bold tracking-wider mb-1">
+          <div className="text-xs uppercase text-slate-300 font-bold tracking-wider mb-1">
             Actions
           </div>
           
           <button 
-            onClick={handleSyncData}
+            onClick={() => {
+              setIsMobileMenuOpen(false);
+              handleSyncData();
+            }}
             disabled={isSyncing}
             className="btn-secondary w-full text-xs py-2 flex items-center justify-center gap-2"
           >
-            <RefreshCw size={14} className={isSyncing ? "animate-spin" : ""} />
+            <RefreshCw size={14} className={isSyncing ? "animate-spin text-[#397ef7]" : "text-[#397ef7]"} />
             <span>{isSyncing ? "Syncing..." : "Sync Account Data"}</span>
           </button>
 
           <button 
-            onClick={handleClearAll}
+            onClick={() => {
+              setIsMobileMenuOpen(false);
+              handleClearAll();
+            }}
             disabled={isClearing}
             className="btn-danger w-full text-xs py-2 flex items-center justify-center gap-2"
           >
@@ -990,18 +1039,21 @@ export default function Home() {
           </button>
         </div>
 
-        <hr className="border-gray-900 my-4" />
+        <hr className="border-zinc-800 my-4" />
 
         {/* Manage Budgets Form */}
         <div className="space-y-3">
-          <div className="text-xs uppercase text-gray-400 font-bold tracking-wider mb-1">
+          <div className="text-xs uppercase text-slate-300 font-bold tracking-wider mb-1">
             Manage Budgets
           </div>
-          <form onSubmit={handleSaveBudget} className="space-y-2">
+          <form onSubmit={(e) => {
+            handleSaveBudget(e);
+            setIsMobileMenuOpen(false);
+          }} className="space-y-2">
             <select 
               value={budgetFormCat}
               onChange={(e) => setBudgetFormCat(e.target.value)}
-              className="form-input text-xs py-1.5"
+              className="form-input text-xs py-2"
             >
               <option value="Groceries">Groceries</option>
               <option value="Dining">Dining</option>
@@ -1012,25 +1064,25 @@ export default function Home() {
               <option value="Travel">Travel</option>
             </select>
             <div className="relative">
-              <span className="absolute left-3 top-2.5 text-xs text-gray-400 font-semibold">$</span>
+              <span className="absolute left-3 top-2.5 text-xs text-slate-300 font-bold">$</span>
               <input 
                 type="number"
                 value={budgetFormLimit}
                 onChange={(e) => setBudgetFormLimit(Number(e.target.value))}
                 placeholder="Monthly Limit" 
-                className="form-input text-xs py-1.5 pl-6"
+                className="form-input text-xs py-2 pl-6"
                 min="0"
                 step="10"
               />
             </div>
-            <button type="submit" className="btn-primary w-full text-xs py-1.5">
+            <button type="submit" className="btn-primary w-full text-xs py-2">
               Save Budget
             </button>
           </form>
         </div>
 
         {/* Push to bottom push logout */}
-        <div className="mt-auto pt-6">
+        <div className="mt-6 md:mt-auto pt-4 border-t border-zinc-800 md:border-t-0">
           <button 
             onClick={handleLogout}
             className="btn-secondary w-full text-xs py-2 flex items-center justify-center gap-2 text-rose-400 hover:text-rose-300"
@@ -1042,26 +1094,26 @@ export default function Home() {
       </aside>
 
       {/* MAIN CONTENT VIEW */}
-      <main className="flex-1 p-6 md:p-10 overflow-y-auto max-h-screen">
+      <main className="flex-1 p-4 sm:p-6 md:p-10 overflow-y-auto min-h-screen">
         {/* Link account dashboard helper if empty */}
         {accounts.length === 0 ? (
-          <div className="max-w-4xl mx-auto space-y-8 py-10">
+          <div className="max-w-4xl mx-auto space-y-8 py-6 sm:py-10">
             <div>
-              <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-white mb-2">
+              <h1 className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-[#397ef7] via-white to-slate-200 mb-2">
                 Link Your Financial Accounts
               </h1>
-              <p className="text-gray-400 text-sm">
+              <p className="text-slate-200 text-sm">
                 To get started, securely link your Bank of America and Cash App accounts via Plaid.
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="custom-card flex flex-col justify-between">
+              <div className="custom-card flex flex-col justify-between border-[#397ef7]/30">
                 <div>
                   <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
                     <span>🏦</span> Bank of America
                   </h3>
-                  <p className="text-xs text-gray-400 mb-6">
+                  <p className="text-xs text-slate-200 mb-6">
                     Connect your checking and savings accounts to sync balances and transactions automatically.
                   </p>
                 </div>
@@ -1073,12 +1125,12 @@ export default function Home() {
                 </button>
               </div>
 
-              <div className="custom-card flex flex-col justify-between">
+              <div className="custom-card flex flex-col justify-between border-[#397ef7]/30">
                 <div>
                   <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
                     <span>📱</span> Cash App Balance
                   </h3>
-                  <p className="text-xs text-gray-400 mb-6">
+                  <p className="text-xs text-slate-200 mb-6">
                     Connect your Cash App account using Lincoln Savings Bank or Sutton Bank account details to monitor peer-to-peer transfers.
                   </p>
                 </div>
@@ -1091,23 +1143,23 @@ export default function Home() {
               </div>
             </div>
 
-            <hr className="border-gray-900" />
-            <div className="text-xs text-gray-500 flex items-center gap-2 justify-center">
-              <Info size={14} className="text-blue-500" />
-              <span>💡 <em>Note: If you just want to evaluate the app, set USE_MOCK_DATA=True in your config.</em></span>
+            <hr className="border-zinc-800" />
+            <div className="text-xs text-slate-300 flex items-center gap-2 justify-center">
+              <Info size={14} className="text-[#397ef7]" />
+              <span>💡 <em className="text-slate-200">Note: If you just want to evaluate the app, set USE_MOCK_DATA=True in your config.</em></span>
             </div>
           </div>
         ) : (
           /* REGULAR DASHBOARD RENDER */
-          <div className="max-w-6xl mx-auto space-y-8">
+          <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-white">
+              <h1 className="text-2xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-[#397ef7] via-white to-slate-200">
                 Munyun Financial Control
               </h1>
             </div>
 
             {/* TAB CONTAINER */}
-            <div className="border-b border-gray-950 flex gap-4 overflow-x-auto pb-px">
+            <div className="border-b border-zinc-800 flex gap-2 sm:gap-4 overflow-x-auto pb-2 scrollbar-none">
               {[
                 { id: 'overview', label: '📊 Dashboard Overview' },
                 { id: 'ledger', label: '📝 Transaction Log' },
@@ -1120,10 +1172,10 @@ export default function Home() {
                     setActiveTab(tab.id as any);
                     setEditingTx(null);
                   }}
-                  className={`pb-3 px-1 text-sm font-semibold border-b-2 transition-all whitespace-nowrap ${
+                  className={`pb-2.5 px-3 py-1.5 text-xs sm:text-sm font-bold rounded-xl border transition-all whitespace-nowrap ${
                     activeTab === tab.id 
-                      ? 'border-blue-500 text-white' 
-                      : 'border-transparent text-gray-400 hover:text-gray-200'
+                      ? 'border-[#397ef7] text-white bg-[#397ef7]/20 shadow-[0_0_15px_rgba(57,126,247,0.3)]' 
+                      : 'border-zinc-800 text-slate-300 hover:text-white hover:bg-zinc-900/60'
                   }`}
                 >
                   {tab.label}
@@ -1133,23 +1185,23 @@ export default function Home() {
 
             {/* TAB 1: OVERVIEW */}
             {activeTab === 'overview' && (
-              <div className="space-y-8">
+              <div className="space-y-6 sm:space-y-8">
                 {/* 3 Metric Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                  <div className="custom-card flex flex-col justify-between">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+                  <div className="custom-card flex flex-col justify-between border-[#397ef7]/30">
                     <span className="metric-label">Total Net Worth</span>
-                    <span className="metric-val text-blue-500">${totalBalance.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                    <span className="metric-trend-up mt-2 flex items-center gap-1">▲ Dynamic Aggregation</span>
+                    <span className="metric-val text-[#397ef7]">${totalBalance.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                    <span className="text-xs font-bold text-slate-300 mt-2 flex items-center gap-1">▲ Dynamic Aggregation</span>
                   </div>
-                  <div className="custom-card flex flex-col justify-between">
+                  <div className="custom-card flex flex-col justify-between border-[#397ef7]/30">
                     <span className="metric-label">Bank of America</span>
-                    <span className="metric-val text-blue-500">${bofABalance.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                    <span className="metric-trend-up mt-2 flex items-center gap-1">▲ Linked OAuth</span>
+                    <span className="metric-val text-[#397ef7]">${bofABalance.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                    <span className="text-xs font-bold text-slate-300 mt-2 flex items-center gap-1">▲ Linked OAuth</span>
                   </div>
-                  <div className="custom-card flex flex-col justify-between">
+                  <div className="custom-card flex flex-col justify-between border-emerald-500/30">
                     <span className="metric-label">Cash App Balance</span>
                     <span className="metric-val text-emerald-400">${cashAppBalance.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                    <span className="metric-trend-up mt-2 flex items-center gap-1 text-emerald-400">▲ P2P Checking</span>
+                    <span className="text-xs font-bold text-emerald-400 mt-2 flex items-center gap-1">▲ P2P Checking</span>
                   </div>
                 </div>
 
@@ -1162,7 +1214,7 @@ export default function Home() {
                   <div className="custom-card">
                     <h3 className="text-base font-bold text-white mb-4">Cumulative Net Worth History</h3>
                     {drawAreaChart() || (
-                      <div className="h-48 flex items-center justify-center text-gray-500">
+                      <div className="h-48 flex items-center justify-center text-slate-300 font-semibold">
                         No historical line chart data available.
                       </div>
                     )}
@@ -1174,14 +1226,14 @@ export default function Home() {
                   <h3 className="text-lg font-bold text-white">Linked Accounts</h3>
                   <div className="space-y-3">
                     {accounts.map(acc => (
-                      <div key={acc.id} className="custom-card py-3.5 flex justify-between items-center border border-gray-950 hover:translate-y-0 hover:border-gray-900 bg-gray-950/20">
+                      <div key={acc.id} className="custom-card py-3.5 flex justify-between items-center border border-zinc-800 hover:border-[#397ef7]/40 bg-zinc-950/60">
                         <div>
-                          <span className="font-semibold text-sm sm:text-base text-white">{acc.name}</span>
-                          <span className="text-xs text-gray-400 ml-2">
+                          <span className="font-bold text-sm sm:text-base text-white">{acc.name}</span>
+                          <span className="text-xs text-slate-300 font-medium ml-2">
                             {acc.mask ? `•••• ${acc.mask}` : ''} ({acc.institution})
                           </span>
                         </div>
-                        <div className={`font-bold text-sm sm:text-base ${acc.institution.includes("Cash App") ? "text-emerald-400" : "text-blue-500"}`}>
+                        <div className={`font-extrabold text-sm sm:text-base ${acc.institution.includes("Cash App") ? "text-emerald-400" : "text-[#397ef7]"}`}>
                           ${(acc.balance_available ?? acc.balance_current ?? 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                         </div>
                       </div>
@@ -1193,14 +1245,14 @@ export default function Home() {
 
             {/* TAB 2: TRANSACTION LEDGER */}
             {activeTab === 'ledger' && (
-              <div className="space-y-8">
+              <div className="space-y-6 sm:space-y-8">
                 <div className="custom-card space-y-4">
                   <h3 className="text-lg font-bold text-white">Transaction Ledger</h3>
                   
                   {/* Filters */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="relative">
-                      <Search className="absolute left-3 top-3 text-gray-500" size={16} />
+                      <Search className="absolute left-3 top-3 text-slate-300" size={16} />
                       <input 
                         type="text"
                         placeholder="Search Merchant / Name / Notes"
@@ -1235,7 +1287,7 @@ export default function Home() {
 
                   {/* Ledger Table */}
                   {filteredTxs.length === 0 ? (
-                    <div className="text-center py-10 text-xs text-gray-500">No matching transactions found.</div>
+                    <div className="text-center py-10 text-xs text-slate-300 font-semibold">No matching transactions found.</div>
                   ) : (
                     <div className="overflow-x-auto">
                       <table className="custom-table">
@@ -1253,22 +1305,22 @@ export default function Home() {
                         <tbody>
                           {filteredTxs.map(t => (
                             <tr key={t.id}>
-                              <td className="whitespace-nowrap">{t.date}</td>
-                              <td className="font-semibold text-white">{t.name}</td>
+                              <td className="whitespace-nowrap font-medium text-slate-200">{t.date}</td>
+                              <td className="font-bold text-white">{t.name}</td>
                               <td>
-                                <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold" style={{
-                                  backgroundColor: `${CATEGORY_COLORS[t.category] || CATEGORY_COLORS.Other}20`,
+                                <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold" style={{
+                                  backgroundColor: `${CATEGORY_COLORS[t.category] || CATEGORY_COLORS.Other}30`,
                                   color: CATEGORY_COLORS[t.category] || CATEGORY_COLORS.Other,
-                                  border: `1px solid ${CATEGORY_COLORS[t.category] || CATEGORY_COLORS.Other}40`
+                                  border: `1px solid ${CATEGORY_COLORS[t.category] || CATEGORY_COLORS.Other}60`
                                 }}>
                                   {t.category}
                                 </span>
                               </td>
-                              <td className={`font-semibold ${t.amount >= 0 ? 'text-gray-300' : 'text-emerald-400'}`}>
+                              <td className={`font-bold ${t.amount >= 0 ? 'text-slate-100' : 'text-emerald-400'}`}>
                                 {t.amount >= 0 ? `$${t.amount.toFixed(2)}` : `-$${Math.abs(t.amount).toFixed(2)}`}
                               </td>
-                              <td>{t.account_name || 'Checking'}</td>
-                              <td className="text-xs text-gray-400 max-w-xs truncate">{t.notes || '—'}</td>
+                              <td className="text-slate-200">{t.account_name || 'Checking'}</td>
+                              <td className="text-xs text-slate-300 max-w-xs truncate">{t.notes || '—'}</td>
                               <td>
                                 <button 
                                   onClick={() => {
@@ -1276,7 +1328,7 @@ export default function Home() {
                                     setEditCategory(t.category);
                                     setEditNotes(t.notes || '');
                                   }}
-                                  className="text-blue-400 hover:text-blue-300 flex items-center gap-1 text-xs font-semibold cursor-pointer"
+                                  className="text-[#397ef7] hover:text-[#5b96ff] flex items-center gap-1 text-xs font-bold cursor-pointer"
                                 >
                                   <Edit size={12} />
                                   <span>Edit</span>
@@ -1292,22 +1344,22 @@ export default function Home() {
 
                 {/* Edit Form Modal/Drawer */}
                 {editingTx && (
-                  <div className="custom-card space-y-4">
+                  <div className="custom-card space-y-4 border-[#397ef7]/40 shadow-[0_0_25px_rgba(57,126,247,0.2)]">
                     <div className="flex items-center justify-between">
                       <h3 className="text-base font-bold text-white flex items-center gap-2">
-                        <Edit size={16} className="text-blue-500" />
+                        <Edit size={16} className="text-[#397ef7]" />
                         <span>✏️ Edit Transaction Details</span>
                       </h3>
                       <button 
                         onClick={() => setEditingTx(null)}
-                        className="text-gray-500 hover:text-gray-400 text-xs font-semibold cursor-pointer"
+                        className="text-slate-300 hover:text-white text-xs font-bold cursor-pointer"
                       >
-                        Cancel
+                        Cancel ✕
                       </button>
                     </div>
                     <form onSubmit={handleUpdateTx} className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
                       <div>
-                        <label className="block text-xs uppercase font-semibold text-gray-400 mb-2">Change Category</label>
+                        <label className="block text-xs uppercase font-bold text-slate-200 mb-2">Change Category</label>
                         <select 
                           value={editCategory}
                           onChange={(e) => setEditCategory(e.target.value)}
@@ -1319,7 +1371,7 @@ export default function Home() {
                         </select>
                       </div>
                       <div>
-                        <label className="block text-xs uppercase font-semibold text-gray-400 mb-2">Edit Notes</label>
+                        <label className="block text-xs uppercase font-bold text-slate-200 mb-2">Edit Notes</label>
                         <input 
                           type="text" 
                           value={editNotes} 
@@ -1328,7 +1380,7 @@ export default function Home() {
                           placeholder="Add transaction notes..."
                         />
                       </div>
-                      <button type="submit" className="btn-primary py-2 text-xs font-semibold w-full">
+                      <button type="submit" className="btn-primary py-2 text-xs font-bold w-full">
                         Save Transaction Updates
                       </button>
                     </form>
@@ -1339,25 +1391,25 @@ export default function Home() {
 
             {/* TAB 3: CASH APP */}
             {activeTab === 'cashapp' && (
-              <div className="space-y-8">
+              <div className="space-y-6 sm:space-y-8">
                 <div>
                   <h3 className="text-xl font-bold text-white mb-2">Cash App Transactions & P2P Transfers</h3>
-                  <p className="text-xs text-gray-400">This tab isolates Cash App accounts to track direct payments, deposits, and cash outs.</p>
+                  <p className="text-xs text-slate-200">This tab isolates Cash App accounts to track direct payments, deposits, and cash outs.</p>
                 </div>
 
                 {/* 3 Metric Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                  <div className="custom-card flex flex-col justify-between">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+                  <div className="custom-card flex flex-col justify-between border-rose-500/30">
                     <span className="metric-label">Total Sent via Cash App</span>
-                    <span className="metric-val text-rose-500">${cashAppFlow.sent.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                    <span className="metric-val text-rose-400">${cashAppFlow.sent.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                   </div>
-                  <div className="custom-card flex flex-col justify-between">
+                  <div className="custom-card flex flex-col justify-between border-emerald-500/30">
                     <span className="metric-label">Total Received via Cash App</span>
                     <span className="metric-val text-emerald-400">${cashAppFlow.received.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                   </div>
-                  <div className="custom-card flex flex-col justify-between">
+                  <div className="custom-card flex flex-col justify-between border-[#397ef7]/30">
                     <span className="metric-label">Net Cash App Flow</span>
-                    <span className={`metric-val ${cashAppFlow.net >= 0 ? 'text-emerald-400' : 'text-rose-500'}`}>
+                    <span className={`metric-val ${cashAppFlow.net >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                       {cashAppFlow.net >= 0 ? '+' : ''}${cashAppFlow.net.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                     </span>
                   </div>
@@ -1367,7 +1419,7 @@ export default function Home() {
                 <div className="custom-card space-y-4">
                   <h4 className="text-sm font-bold text-white uppercase tracking-wider">Cash App Detailed History</h4>
                   {cashAppTxs.length === 0 ? (
-                    <div className="text-center py-10 text-xs text-gray-500">No Cash App transactions found.</div>
+                    <div className="text-center py-10 text-xs text-slate-300 font-semibold">No Cash App transactions found.</div>
                   ) : (
                     <div className="overflow-x-auto">
                       <table className="custom-table">
@@ -1382,18 +1434,18 @@ export default function Home() {
                         <tbody>
                           {cashAppTxs.map(t => (
                             <tr key={t.id}>
-                              <td>{t.date}</td>
-                              <td className="font-semibold text-white">{t.name}</td>
+                              <td className="whitespace-nowrap font-medium text-slate-200">{t.date}</td>
+                              <td className="font-bold text-white">{t.name}</td>
                               <td>
-                                <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold" style={{
-                                  backgroundColor: `${CATEGORY_COLORS[t.category] || CATEGORY_COLORS.Other}20`,
+                                <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold" style={{
+                                  backgroundColor: `${CATEGORY_COLORS[t.category] || CATEGORY_COLORS.Other}30`,
                                   color: CATEGORY_COLORS[t.category] || CATEGORY_COLORS.Other,
-                                  border: `1px solid ${CATEGORY_COLORS[t.category] || CATEGORY_COLORS.Other}40`
+                                  border: `1px solid ${CATEGORY_COLORS[t.category] || CATEGORY_COLORS.Other}60`
                                 }}>
                                   {t.category}
                                 </span>
                               </td>
-                              <td className={`font-semibold ${t.amount >= 0 ? 'text-rose-500' : 'text-emerald-400'}`}>
+                              <td className={`font-bold ${t.amount >= 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
                                 {t.amount >= 0 ? `$${t.amount.toFixed(2)}` : `-$${Math.abs(t.amount).toFixed(2)}`}
                               </td>
                             </tr>
@@ -1408,16 +1460,16 @@ export default function Home() {
 
             {/* TAB 4: BUDGET PLANNER */}
             {activeTab === 'budgets' && (
-              <div className="space-y-8">
+              <div className="space-y-6 sm:space-y-8">
                 <div>
                   <h3 className="text-xl font-bold text-white mb-2">Budget Progress Tracker</h3>
-                  <p className="text-xs text-gray-400">Compare your monthly limits against transactions from the last 30 days.</p>
+                  <p className="text-xs text-slate-200">Compare your monthly limits against transactions from the last 30 days.</p>
                 </div>
 
                 {Object.keys(budgets).length === 0 ? (
-                  <div className="custom-card text-center py-10 text-xs text-gray-500 flex flex-col items-center justify-center gap-3">
-                    <HelpCircle size={32} className="text-blue-500" />
-                    <span>No budgets configured yet. Use the sidebar to set category spending limits!</span>
+                  <div className="custom-card text-center py-10 text-xs text-slate-200 flex flex-col items-center justify-center gap-3 border-[#397ef7]/20">
+                    <HelpCircle size={36} className="text-[#397ef7]" />
+                    <span className="font-semibold text-slate-100">No budgets configured yet. Use the sidebar/control panel to set category spending limits!</span>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1432,15 +1484,15 @@ export default function Home() {
 
                       let statusBadge = null;
                       if (percent < 0.70) {
-                        statusBadge = <span className="text-xs font-semibold text-emerald-400 bg-emerald-950/20 px-2 py-0.5 border border-emerald-900/30 rounded-lg">Under Budget</span>;
+                        statusBadge = <span className="text-xs font-bold text-emerald-300 bg-emerald-950/60 px-2.5 py-1 border border-emerald-500/40 rounded-lg">Under Budget</span>;
                       } else if (percent < 0.95) {
-                        statusBadge = <span className="text-xs font-semibold text-amber-400 bg-amber-950/20 px-2 py-0.5 border border-amber-900/30 rounded-lg font-medium">Approaching Limit</span>;
+                        statusBadge = <span className="text-xs font-bold text-amber-300 bg-amber-950/60 px-2.5 py-1 border border-amber-500/40 rounded-lg">Approaching Limit</span>;
                       } else {
-                        statusBadge = <span className="text-xs font-semibold text-rose-500 bg-rose-950/20 px-2 py-0.5 border border-rose-900/30 rounded-lg">OVER BUDGET</span>;
+                        statusBadge = <span className="text-xs font-bold text-rose-300 bg-rose-950/60 px-2.5 py-1 border border-rose-500/40 rounded-lg">OVER BUDGET</span>;
                       }
 
                       return (
-                        <div key={cat} className="custom-card flex flex-col justify-between">
+                        <div key={cat} className="custom-card flex flex-col justify-between border-[#397ef7]/25">
                           <div className="flex items-center justify-between mb-3">
                             <h4 className="text-base font-bold text-white">{cat} Budget</h4>
                             {statusBadge}
@@ -1448,7 +1500,7 @@ export default function Home() {
                           
                           {/* Progress bar container */}
                           <div className="space-y-2 mt-4">
-                            <div className="w-full bg-gray-950 h-3 rounded-full overflow-hidden border border-gray-900 flex">
+                            <div className="w-full bg-zinc-950 h-3.5 rounded-full overflow-hidden border border-zinc-800 flex">
                               <div 
                                 style={{ 
                                   width: `${displayPercent}%`,
@@ -1456,12 +1508,12 @@ export default function Home() {
                                     ? 'linear-gradient(90deg, #dc2626, #ef4444)' 
                                     : percent >= 0.70 
                                       ? 'linear-gradient(90deg, #d97706, #f59e0b)' 
-                                      : 'linear-gradient(90deg, #1e40af, #4e80e4)'
+                                      : 'linear-gradient(90deg, #2b66d0, #397ef7)'
                                 }} 
-                                className="h-full rounded-full transition-all duration-500"
+                                className="h-full rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(57,126,247,0.5)]"
                               />
                             </div>
-                            <div className="flex justify-between text-xs text-gray-500 font-semibold pt-1">
+                            <div className="flex justify-between text-xs text-slate-200 font-bold pt-1">
                               <span>Spent: ${spent.toFixed(2)}</span>
                               <span>Limit: ${limit.toFixed(2)} ({Math.round(percent * 100)}%)</span>
                             </div>
