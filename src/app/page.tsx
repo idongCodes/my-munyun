@@ -687,9 +687,9 @@ export default function Home() {
   // --- Render Auth Screens ---
   if (!isLoggedIn) {
     return (
-      <div className="min-h-screen h-full min-h-[100vh] bg-black flex flex-col items-center justify-center p-6 sm:p-12 py-10 sm:py-16">
-        <div className="w-full max-w-md min-h-[85vh] sm:min-h-[80vh] flex flex-col justify-between py-4 sm:py-6 animate-login-instant">
-          <div className="text-center mb-8 sm:mb-12">
+      <div className="min-h-screen bg-black flex items-center justify-center p-6 sm:p-10">
+        <div className="w-full max-w-md animate-login-instant">
+          <div className="text-center mb-10 sm:mb-14">
             <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white font-outfit flex items-center justify-center gap-3.5 sm:gap-5 mb-6 sm:mb-8">
               <span>💸</span>
               <span>My</span>
@@ -700,7 +700,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="custom-card relative overflow-hidden p-8 sm:p-10 border-[#397ef7]/30 shadow-[0_0_40px_rgba(57,126,247,0.2)] flex-1 flex flex-col justify-center min-h-[440px] sm:min-h-[480px]">
+          <div className="custom-card relative overflow-hidden p-6 sm:p-8 border-[#397ef7]/30 shadow-[0_0_35px_rgba(57,126,247,0.2)]">
             {/* SETUP TOTP WIZARD */}
             {isSettingUpTotp ? (
               <div className="space-y-6 sm:space-y-7">
