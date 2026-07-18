@@ -2,7 +2,9 @@ import sqlite3 from 'sqlite3';
 import { open, Database } from 'sqlite';
 import path from 'path';
 
-const DB_PATH = path.join(process.cwd(), 'data.db');
+const DB_PATH = process.env.VERCEL
+  ? path.join('/tmp', 'data.db')
+  : path.join(process.cwd(), 'data.db');
 
 let dbInstance: Database | null = null;
 
