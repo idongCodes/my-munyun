@@ -685,47 +685,47 @@ export default function Home() {
   // --- Render Auth Screens ---
   if (!isLoggedIn) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-4">
+      <div className="min-h-screen bg-black flex items-center justify-center p-6 sm:p-10">
         <div className="w-full max-w-md animate-login-instant">
-          <div className="text-center mb-8">
-            <div className="text-4xl font-extrabold tracking-tight text-white mb-2 font-outfit">
+          <div className="text-center mb-8 sm:mb-10 space-y-3">
+            <div className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white font-outfit">
               💸 My <span className="text-[#397ef7]">Munyun</span>
             </div>
-            <div className="text-xs uppercase tracking-widest text-slate-300 font-bold">
+            <div className="text-xs uppercase tracking-[0.25em] text-slate-300 font-bold pt-1">
               Secure Wealth Portal
             </div>
           </div>
 
-          <div className="custom-card relative overflow-hidden border-[#397ef7]/30 shadow-[0_0_30px_rgba(57,126,247,0.15)]">
+          <div className="custom-card relative overflow-hidden p-6 sm:p-8 border-[#397ef7]/30 shadow-[0_0_35px_rgba(57,126,247,0.2)]">
             {/* SETUP TOTP WIZARD */}
             {isSettingUpTotp ? (
-              <div className="space-y-6">
-                <div className="flex items-center gap-2 mb-2 text-xl font-bold text-white">
+              <div className="space-y-6 sm:space-y-7">
+                <div className="flex items-center gap-3 mb-3 text-xl font-bold text-white">
                   <Lock className="text-[#397ef7]" />
                   <span>Setup 2FA (Google Authenticator)</span>
                 </div>
                 
-                <p className="text-xs text-slate-200">
+                <p className="text-xs text-slate-200 leading-relaxed">
                   Scan the QR code below using your Google Authenticator app on your phone, then enter the verification code.
                 </p>
 
                 {totpSetupQr && (
-                  <div className="flex flex-col items-center py-4 bg-zinc-950/80 rounded-xl border border-zinc-800">
-                    <img src={totpSetupQr} alt="QR Code" className="border-4 border-zinc-800 rounded-xl mb-4" />
-                    <code className="text-xs bg-zinc-950 px-3 py-1.5 rounded-lg border border-zinc-700 text-[#397ef7] font-mono font-bold">
+                  <div className="flex flex-col items-center p-6 bg-zinc-950/80 rounded-xl border border-zinc-800 space-y-4">
+                    <img src={totpSetupQr} alt="QR Code" className="border-4 border-zinc-800 rounded-xl" />
+                    <code className="text-xs bg-zinc-950 px-4 py-2 rounded-lg border border-zinc-700 text-[#397ef7] font-mono font-bold">
                       Secret Key: {totpSetupSecret}
                     </code>
                   </div>
                 )}
 
                 {totpSetupSuccess ? (
-                  <div className="space-y-4">
-                    <div className="bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 p-3.5 rounded-xl text-xs flex gap-2">
+                  <div className="space-y-5">
+                    <div className="bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 p-4 rounded-xl text-xs flex gap-3">
                       <CheckCircle className="flex-shrink-0" />
-                      <div>
-                        <strong className="text-white">Google Authenticator verification successful!</strong>
-                        <p className="mt-1 text-slate-200">Add this variable to your .env file or deployment configuration:</p>
-                        <pre className="mt-1 bg-black/80 p-2 rounded-lg border border-emerald-500/30 text-emerald-300 select-all font-mono">
+                      <div className="space-y-2">
+                        <strong className="text-white block">Google Authenticator verification successful!</strong>
+                        <p className="text-slate-200">Add this variable to your .env file or deployment configuration:</p>
+                        <pre className="mt-2 bg-black/80 p-3 rounded-lg border border-emerald-500/30 text-emerald-300 select-all font-mono">
                           TOTP_SECRET={totpSetupSecret}
                         </pre>
                       </div>
@@ -736,15 +736,15 @@ export default function Home() {
                         setTotpSetupSuccess(false);
                         completeLogin();
                       }}
-                      className="btn-primary w-full"
+                      className="btn-primary w-full py-3.5 text-sm font-bold"
                     >
                       Proceed to Dashboard
                     </button>
                   </div>
                 ) : (
-                  <form onSubmit={handleSetupTotpVerify} className="space-y-4">
-                    <div>
-                      <label className="block text-xs uppercase font-bold text-slate-200 mb-2">
+                  <form onSubmit={handleSetupTotpVerify} className="space-y-5">
+                    <div className="space-y-3">
+                      <label className="block text-xs uppercase font-bold text-slate-200 tracking-wider">
                         Enter 6-digit Verification Code
                       </label>
                       <input 
@@ -752,29 +752,29 @@ export default function Home() {
                         placeholder="000 000" 
                         value={totpVerifyCode}
                         onChange={(e) => setTotpVerifyCode(e.target.value)}
-                        className="form-input text-center tracking-widest text-lg font-bold" 
+                        className="form-input text-center tracking-widest text-lg font-bold py-3.5" 
                       />
                     </div>
                     
                     {authError && (
-                      <div className="bg-rose-950/40 border border-rose-500/40 text-rose-300 p-3 rounded-xl text-xs flex gap-2">
+                      <div className="bg-rose-950/40 border border-rose-500/40 text-rose-300 p-4 rounded-xl text-xs flex gap-3">
                         <AlertCircle className="flex-shrink-0" size={16} />
                         <span>{authError}</span>
                       </div>
                     )}
 
-                    <div className="grid grid-cols-2 gap-3 pt-2">
+                    <div className="grid grid-cols-2 gap-4 pt-3">
                       <button 
                         type="button" 
                         onClick={() => {
                           setIsSettingUpTotp(false);
                           setAuthError('');
                         }}
-                        className="btn-secondary w-full"
+                        className="btn-secondary w-full py-3 text-sm font-semibold"
                       >
                         Cancel
                       </button>
-                      <button type="submit" className="btn-primary w-full">
+                      <button type="submit" className="btn-primary w-full py-3 text-sm font-bold">
                         Verify & Activate
                       </button>
                     </div>
@@ -783,10 +783,10 @@ export default function Home() {
               </div>
             ) : (
               /* REGULAR LOGIN FLOW */
-              <div className="space-y-6">
+              <div className="space-y-6 sm:space-y-7">
                 {/* Method selector */}
-                <div className="space-y-2">
-                  <label className="block text-xs uppercase font-bold text-slate-200">
+                <div className="space-y-3">
+                  <label className="block text-xs uppercase font-bold text-slate-200 tracking-wider">
                     Authentication Method
                   </label>
                   <select 
@@ -796,7 +796,7 @@ export default function Home() {
                       setAuthError('');
                       setAuthSuccessMsg('');
                     }}
-                    className="form-input cursor-pointer"
+                    className="form-input cursor-pointer py-3.5 px-4 text-sm"
                   >
                     <option value="passcode">Passcode Login</option>
                     <option value="totp">Authenticator Code</option>
@@ -806,9 +806,9 @@ export default function Home() {
 
                 {/* Flow 1: Passcode */}
                 {authMethod === 'passcode' && (
-                  <form onSubmit={handlePasscodeLogin} className="space-y-4">
-                    <div className="space-y-2">
-                      <label className="block text-xs uppercase font-bold text-slate-200">
+                  <form onSubmit={handlePasscodeLogin} className="space-y-5 sm:space-y-6">
+                    <div className="space-y-3">
+                      <label className="block text-xs uppercase font-bold text-slate-200 tracking-wider">
                         Passcode
                       </label>
                       <input 
@@ -816,10 +816,10 @@ export default function Home() {
                         placeholder="••••" 
                         value={passcode}
                         onChange={(e) => setPasscode(e.target.value)}
-                        className="form-input text-center text-xl tracking-widest" 
+                        className="form-input text-center text-xl tracking-widest py-3.5" 
                       />
                     </div>
-                    <button type="submit" className="btn-primary w-full">
+                    <button type="submit" className="btn-primary w-full py-3.5 text-sm font-bold">
                       Authenticate
                     </button>
                   </form>
@@ -827,9 +827,9 @@ export default function Home() {
 
                 {/* Flow 2: TOTP */}
                 {authMethod === 'totp' && (
-                  <form onSubmit={handleTotpLogin} className="space-y-4">
-                    <div className="space-y-2">
-                      <label className="block text-xs uppercase font-bold text-slate-200">
+                  <form onSubmit={handleTotpLogin} className="space-y-5 sm:space-y-6">
+                    <div className="space-y-3">
+                      <label className="block text-xs uppercase font-bold text-slate-200 tracking-wider">
                         Google Authenticator Code
                       </label>
                       <input 
@@ -837,10 +837,10 @@ export default function Home() {
                         placeholder="000 000" 
                         value={totpCode}
                         onChange={(e) => setTotpCode(e.target.value)}
-                        className="form-input text-center text-lg tracking-widest font-bold" 
+                        className="form-input text-center text-lg tracking-widest font-bold py-3.5" 
                       />
                     </div>
-                    <button type="submit" className="btn-primary w-full">
+                    <button type="submit" className="btn-primary w-full py-3.5 text-sm font-bold">
                       Unlock Portal
                     </button>
                   </form>
@@ -848,11 +848,11 @@ export default function Home() {
 
                 {/* Flow 3: SMS */}
                 {authMethod === 'sms' && (
-                  <div className="space-y-4">
+                  <div className="space-y-5 sm:space-y-6">
                     {!smsSent ? (
-                      <form onSubmit={handleSmsRequest} className="space-y-4">
-                        <div className="space-y-2">
-                          <label className="block text-xs uppercase font-bold text-slate-200">
+                      <form onSubmit={handleSmsRequest} className="space-y-5 sm:space-y-6">
+                        <div className="space-y-3">
+                          <label className="block text-xs uppercase font-bold text-slate-200 tracking-wider">
                             Phone Number
                           </label>
                           <input 
@@ -860,20 +860,20 @@ export default function Home() {
                             placeholder="+1 (774) 312 6471" 
                             value={phone}
                             onChange={(e) => setPhone(e.target.value)}
-                            className="form-input" 
+                            className="form-input py-3.5 px-4" 
                           />
                         </div>
-                        <button type="submit" className="btn-primary w-full">
+                        <button type="submit" className="btn-primary w-full py-3.5 text-sm font-bold">
                           Send Code
                         </button>
                       </form>
                     ) : (
-                      <form onSubmit={handleSmsVerify} className="space-y-4">
-                        <div className="space-y-2 text-xs text-slate-200">
+                      <form onSubmit={handleSmsVerify} className="space-y-5 sm:space-y-6">
+                        <div className="text-xs text-slate-200 pb-1">
                           Code sent to <strong className="text-white">{phone}</strong>
                         </div>
-                        <div className="space-y-2">
-                          <label className="block text-xs uppercase font-bold text-slate-200">
+                        <div className="space-y-3">
+                          <label className="block text-xs uppercase font-bold text-slate-200 tracking-wider">
                             Enter 6-digit SMS Code
                           </label>
                           <input 
@@ -881,24 +881,26 @@ export default function Home() {
                             placeholder="000 000" 
                             value={smsCode}
                             onChange={(e) => setSmsCode(e.target.value)}
-                            className="form-input text-center text-lg tracking-widest font-bold" 
+                            className="form-input text-center text-lg tracking-widest font-bold py-3.5" 
                           />
                         </div>
-                        <button type="submit" className="btn-primary w-full">
-                          Unlock Portal
-                        </button>
-                        <button 
-                          type="button" 
-                          onClick={() => {
-                            setSmsSent(false);
-                            setSmsCode('');
-                            setSmsDemoCode(null);
-                            setAuthSuccessMsg('');
-                          }}
-                          className="btn-secondary w-full"
-                        >
-                          Resend Code / Change Number
-                        </button>
+                        <div className="space-y-3 pt-1">
+                          <button type="submit" className="btn-primary w-full py-3.5 text-sm font-bold">
+                            Unlock Portal
+                          </button>
+                          <button 
+                            type="button" 
+                            onClick={() => {
+                              setSmsSent(false);
+                              setSmsCode('');
+                              setSmsDemoCode(null);
+                              setAuthSuccessMsg('');
+                            }}
+                            className="btn-secondary w-full py-3 text-xs font-semibold"
+                          >
+                            Resend Code / Change Number
+                          </button>
+                        </div>
                       </form>
                     )}
                   </div>
@@ -906,14 +908,14 @@ export default function Home() {
 
                 {/* Feedback messages */}
                 {authError && (
-                  <div className="bg-rose-950/40 border border-rose-500/40 text-rose-300 p-3.5 rounded-xl text-xs flex gap-2">
+                  <div className="bg-rose-950/40 border border-rose-500/40 text-rose-300 p-4 rounded-xl text-xs flex gap-3">
                     <AlertCircle className="flex-shrink-0" size={16} />
                     <span>{authError}</span>
                   </div>
                 )}
 
                 {authSuccessMsg && (
-                  <div className="bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 p-3.5 rounded-xl text-xs flex gap-2">
+                  <div className="bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 p-4 rounded-xl text-xs flex gap-3">
                     <CheckCircle className="flex-shrink-0" size={16} />
                     <span>{authSuccessMsg}</span>
                   </div>
@@ -921,11 +923,11 @@ export default function Home() {
 
                 {/* TOTP Setup Button */}
                 {authMethod === 'passcode' && (
-                  <div className="border-t border-zinc-800 pt-4 flex flex-col items-center">
-                    <span className="text-xs text-slate-300 font-semibold mb-3">or</span>
+                  <div className="border-t border-zinc-800/90 pt-6 mt-6 flex flex-col items-center gap-3">
+                    <span className="text-xs text-slate-300 font-semibold uppercase tracking-widest">or</span>
                     <button 
                       onClick={handleSetupTotpStart}
-                      className="btn-secondary w-full text-xs py-2"
+                      className="btn-secondary w-full text-xs py-3 font-semibold"
                     >
                       🛡️ Setup Google Authenticator 2FA
                     </button>
@@ -935,7 +937,7 @@ export default function Home() {
             )}
           </div>
           
-          <div className="text-center mt-6 text-xs text-slate-300 tracking-wider font-semibold">
+          <div className="text-center mt-8 sm:mt-10 text-xs text-slate-300 tracking-wider font-semibold px-4">
             PROTECTED BY AES-256 LOCAL DATABASE ENCRYPTION.
           </div>
         </div>
