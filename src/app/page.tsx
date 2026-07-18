@@ -16,14 +16,11 @@ export default function Home() {
   const [cliIndex, setCliIndex] = useState(0);
 
   useEffect(() => {
-    // Check if splash was already shown in current session
-    const splashShown = sessionStorage.getItem('munyun_splash_shown');
-    if (splashShown === 'true') {
-      setShowSplash(false);
-      return;
-    }
+    // Always play splash screen animation when visiting '/'
+    setShowSplash(true);
+    setCliIndex(0);
 
-    // Cycle CLI messages
+    // Cycle through all 5 CLI messages over 5 seconds (1000ms per step)
     const messageInterval = setInterval(() => {
       setCliIndex((prev) => {
         if (prev < CLI_MESSAGES.length - 1) {
@@ -31,17 +28,16 @@ export default function Home() {
         }
         return prev;
       });
-    }, 600);
+    }, 1000);
 
-    // Auto-dismiss splash screen after 2.8s
-    const timer = setTimeout(() => {
+    // Guarantee splash screen plays for at least 5 seconds (5000ms)
+    const splashTimer = setTimeout(() => {
       setShowSplash(false);
-      sessionStorage.setItem('munyun_splash_shown', 'true');
-    }, 2800);
+    }, 5000);
 
     return () => {
       clearInterval(messageInterval);
-      clearTimeout(timer);
+      clearTimeout(splashTimer);
     };
   }, []);
 

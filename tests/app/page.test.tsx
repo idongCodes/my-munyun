@@ -4,10 +4,15 @@ import Home from '@/app/page';
 
 describe('Home Page Component (page.tsx)', () => {
   beforeEach(() => {
+    vi.useFakeTimers();
     sessionStorage.clear();
   });
 
-  it('should render splash screen CLI animation initially on load', async () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('should render splash screen CLI animation whenever visiting /', async () => {
     await act(async () => {
       render(<Home />);
     });
@@ -16,12 +21,16 @@ describe('Home Page Component (page.tsx)', () => {
     expect(screen.getByText(/munyun-cli/i)).toBeDefined();
   });
 
-  it('should skip splash screen and render home landing page when splash was previously shown', async () => {
-    sessionStorage.setItem('munyun_splash_shown', 'true');
-
+  it('should play splash screen for at least 5 seconds before showing home landing page', async () => {
     await act(async () => {
       render(<Home />);
     });
+    
+    // Fast-forward 5000ms timer
+    await act(async () => {
+      vi.advanceTimersByTime(5000);
+    });
+
     expect(screen.getByText(/💸 My/i)).toBeDefined();
     expect(screen.getByText(/Welcome to My Munyun/i)).toBeDefined();
   });
