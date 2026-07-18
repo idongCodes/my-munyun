@@ -215,8 +215,7 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
         {/* Header Title */}
         <div className="flex flex-col items-center text-center gap-4 sm:gap-5">
           <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white font-outfit flex items-center justify-center gap-3.5 sm:gap-5">
-            <span>💸</span>
-            <span>My</span>
+            <span>💸 My</span>
             <span className="text-[#397ef7]">Munyun</span>
           </h1>
           <p className="text-xs sm:text-sm uppercase tracking-[0.25em] text-slate-300 font-bold">

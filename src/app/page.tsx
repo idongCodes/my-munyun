@@ -651,8 +651,7 @@ export default function Home() {
         <div className="flex flex-col items-center justify-center gap-3 sm:gap-4 text-center max-w-lg mx-auto w-full h-full px-4 sm:px-6 py-2">
           {/* Main Title Heading */}
           <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white font-outfit leading-tight px-4 py-1 mb-1 flex items-center justify-center gap-3 sm:gap-4 flex-wrap">
-            <span>💸</span>
-            <span>My</span>
+            <span>💸 My</span>
             <span className="text-[#397ef7]">Munyun</span>
           </h1>
           
