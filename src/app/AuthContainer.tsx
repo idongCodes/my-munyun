@@ -380,8 +380,8 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
             </div>
           ) : mode === 'register' ? (
             /* NEW ACCOUNT REGISTRATION FORM */
-            <div className="space-y-6">
-              <div className="text-left space-y-1">
+            <div className="flex flex-col gap-6 sm:gap-7">
+              <div className="text-left flex flex-col gap-1.5">
                 <h2 className="text-xl font-extrabold text-white flex items-center gap-2 font-outfit">
                   <Sparkles className="text-[#397ef7]" size={20} />
                   <span>Create Your Account</span>
@@ -406,16 +406,16 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
                 <span>Sign Up with Google</span>
               </button>
 
-              <div className="flex items-center gap-3 my-2">
+              <div className="flex items-center gap-3 my-1">
                 <div className="flex-1 border-t border-zinc-800"></div>
                 <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest">or fill details below</span>
                 <div className="flex-1 border-t border-zinc-800"></div>
               </div>
 
-              <form onSubmit={handleRegisterSubmit} className="space-y-4">
+              <form onSubmit={handleRegisterSubmit} className="flex flex-col gap-4 sm:gap-5">
                 {/* First and Last Name Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                  <div className="space-y-1.5 text-left">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-2 text-left">
                     <label className="block text-xs uppercase font-bold text-slate-200 tracking-wider">
                       First Name *
                     </label>
@@ -425,10 +425,10 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
                       placeholder="Jane" 
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
-                      className="form-input text-sm py-2.5 px-3" 
+                      className="form-input text-sm py-3 px-3.5" 
                     />
                   </div>
-                  <div className="space-y-1.5 text-left">
+                  <div className="flex flex-col gap-2 text-left">
                     <label className="block text-xs uppercase font-bold text-slate-200 tracking-wider">
                       Last Name *
                     </label>
@@ -438,13 +438,13 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
                       placeholder="Doe" 
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
-                      className="form-input text-sm py-2.5 px-3" 
+                      className="form-input text-sm py-3 px-3.5" 
                     />
                   </div>
                 </div>
 
                 {/* Preferred Name / Username */}
-                <div className="space-y-1.5 text-left">
+                <div className="flex flex-col gap-2 text-left">
                   <label className="block text-xs uppercase font-bold text-slate-200 tracking-wider flex items-center gap-1.5">
                     <User size={13} className="text-[#397ef7]" />
                     <span>Preferred Name / Username</span>
@@ -454,12 +454,12 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
                     placeholder="JaneD" 
                     value={preferredName}
                     onChange={(e) => setPreferredName(e.target.value)}
-                    className="form-input text-sm py-2.5 px-3" 
+                    className="form-input text-sm py-3 px-3.5" 
                   />
                 </div>
 
                 {/* Email Address */}
-                <div className="space-y-1.5 text-left">
+                <div className="flex flex-col gap-2 text-left">
                   <label className="block text-xs uppercase font-bold text-slate-200 tracking-wider flex items-center gap-1.5">
                     <Mail size={13} className="text-[#397ef7]" />
                     <span>Email Address *</span>
@@ -470,12 +470,12 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
                     placeholder="jane.doe@example.com" 
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="form-input text-sm py-2.5 px-3" 
+                    className="form-input text-sm py-3 px-3.5" 
                   />
                 </div>
 
                 {/* Mobile Phone Number */}
-                <div className="space-y-1.5 text-left">
+                <div className="flex flex-col gap-2 text-left">
                   <label className="block text-xs uppercase font-bold text-slate-200 tracking-wider flex items-center gap-1.5">
                     <Phone size={13} className="text-[#397ef7]" />
                     <span>Mobile Phone Number *</span>
@@ -486,20 +486,20 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
                     placeholder="+1 (774) 312 6471" 
                     value={mobileNumber}
                     onChange={(e) => setMobileNumber(e.target.value)}
-                    className="form-input text-sm py-2.5 px-3" 
+                    className="form-input text-sm py-3 px-3.5" 
                   />
                 </div>
 
                 {/* Feedback Error / Success */}
                 {authError && (
-                  <div className="bg-rose-950/40 border border-rose-500/40 text-rose-300 p-3 rounded-xl text-xs flex gap-2.5 text-left">
+                  <div className="bg-rose-950/40 border border-rose-500/40 text-rose-300 p-3.5 rounded-xl text-xs flex gap-2.5 text-left">
                     <AlertCircle className="flex-shrink-0" size={16} />
                     <span>{authError}</span>
                   </div>
                 )}
 
                 {authSuccessMsg && (
-                  <div className="bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 p-3 rounded-xl text-xs flex gap-2.5 text-left">
+                  <div className="bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 p-3.5 rounded-xl text-xs flex gap-2.5 text-left">
                     <CheckCircle className="flex-shrink-0" size={16} />
                     <span>{authSuccessMsg}</span>
                   </div>
