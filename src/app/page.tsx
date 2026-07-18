@@ -134,22 +134,119 @@ export default function Home() {
     }
   };
 
-  // --- Render Splash Screen ---
-  if (isSplashActive) {
-    return (
-      <div className="fixed inset-0 bg-[#0f172a] flex flex-col justify-center items-center z-50 animate-pulse p-4">
-        <div className="flex flex-col items-center text-center">
-          <div className="text-4xl sm:text-7xl font-black tracking-tight text-white mb-8 font-sans">
-            💸 My <span className="text-[#397ef7]">Munyun</span>
-          </div>
-          <div className="w-16 h-16 border-4 border-[#397ef7]/20 border-t-[#397ef7] rounded-full animate-spin mb-8"></div>
-          <div className="text-sm font-semibold text-slate-400 tracking-[0.2em] uppercase px-6 py-2 rounded-full border border-slate-800 bg-slate-900/50">
-            Initializing Financial Engine...
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // --- Calculations for Overview Analytics (Hooks must be called unconditionally at top) ---
+  const totalBalance = useMemo(() => {
+    return accounts.reduce((sum, acc) => sum + (acc.balance_available ?? acc.balance_current ?? 0), 0);
+  }, [accounts]);
+
+  const bofABalance = useMemo(() => {
+    return accounts
+      .filter(acc => acc.institution === "Bank of America")
+      .reduce((sum, acc) => sum + (acc.balance_available ?? acc.balance_current ?? 0), 0);
+  }, [accounts]);
+
+  const cashAppBalance = useMemo(() => {
+    return accounts
+      .filter(acc => acc.institution.includes("Cash App"))
+      .reduce((sum, acc) => sum + (acc.balance_available ?? acc.balance_current ?? 0), 0);
+  }, [accounts]);
+
+  // Expenses data calculation for Pie Chart
+  const expenseSummary = useMemo(() => {
+    const expenses = transactions.filter(t => t.amount > 0 && t.category !== 'Income');
+    const categoriesMap: Record<string, number> = {};
+    let totalExpensesSum = 0;
+
+    expenses.forEach(t => {
+      const cat = t.category || 'Uncategorized';
+      categoriesMap[cat] = (categoriesMap[cat] || 0) + t.amount;
+      totalExpensesSum += t.amount;
+    });
+
+    const slices = Object.entries(categoriesMap).map(([category, amount]) => ({
+      category,
+      amount,
+      percentage: totalExpensesSum > 0 ? amount / totalExpensesSum : 0,
+      color: CATEGORY_COLORS[category] || CATEGORY_COLORS.Other
+    })).sort((a, b) => b.amount - a.amount);
+
+    return { slices, totalExpensesSum };
+  }, [transactions]);
+
+  // Balance history calculation for Spline Line Chart
+  const balanceHistory = useMemo(() => {
+    if (transactions.length === 0) return [];
+    
+    // Sort transactions chronologically
+    const sorted = [...transactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    
+    // Group transactions by date
+    const dailyMap: Record<string, number> = {};
+    sorted.forEach(t => {
+      const dateStr = t.date;
+      dailyMap[dateStr] = (dailyMap[dateStr] || 0) - t.amount;
+    });
+
+    const dailyChanges = Object.entries(dailyMap).map(([date, change]) => ({
+      date,
+      change
+    })).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    // Back-calculate historical balances starting from the current total balance
+    const history: { date: string; balance: number }[] = [];
+    let currentCalc = totalBalance;
+    
+    // Process backwards to calculate the previous points
+    for (let i = dailyChanges.length - 1; i >= 0; i--) {
+      history.unshift({
+        date: dailyChanges[i].date,
+        balance: currentCalc
+      });
+      currentCalc -= dailyChanges[i].change;
+    }
+
+    return history;
+  }, [transactions, totalBalance]);
+
+  // Filtered transactions for Ledger
+  const filteredTxs = useMemo(() => {
+    return transactions.filter(t => {
+      const matchesSearch = t.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                            (t.notes || '').toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = categoryFilter === 'All' || t.category === categoryFilter;
+      const matchesInstitution = institutionFilter === 'All' || t.institution === institutionFilter;
+      return matchesSearch && matchesCategory && matchesInstitution;
+    });
+  }, [transactions, searchQuery, categoryFilter, institutionFilter]);
+
+  // Cash App transaction lists and flows
+  const cashAppTxs = useMemo(() => {
+    return transactions.filter(t => t.institution.includes("Cash App"));
+  }, [transactions]);
+
+  const cashAppFlow = useMemo(() => {
+    let sent = 0;
+    let received = 0;
+    cashAppTxs.forEach(t => {
+      if (t.amount > 0) {
+        sent += t.amount;
+      } else {
+        received += Math.abs(t.amount);
+      }
+    });
+    return { sent, received, net: received - sent };
+  }, [cashAppTxs]);
+
+  // Dropdown list contents for ledger filters
+  const uniqueCategories = useMemo(() => {
+    const cats = new Set(transactions.map(t => t.category).filter(Boolean));
+    return ['All', ...Array.from(cats)];
+  }, [transactions]);
+
+  const uniqueInstitutions = useMemo(() => {
+    const insts = new Set(transactions.map(t => t.institution).filter(Boolean));
+    return ['All', ...Array.from(insts)];
+  }, [transactions]);
 
   // Auth submission handlers
   const handlePasscodeLogin = async (e: React.FormEvent) => {
@@ -252,7 +349,6 @@ export default function Home() {
       const data = await res.json();
       if (data.success) {
         setTotpSetupSecret(data.secret);
-        // Build QR server URL using API
         const provisioningUri = encodeURIComponent(data.qrProvisioningUri);
         setTotpSetupQr(`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${provisioningUri}&color=4e80e4&bgcolor=000000`);
         setIsSettingUpTotp(true);
@@ -311,7 +407,6 @@ export default function Home() {
       const dataLink = await resLink.json();
 
       if (dataLink.link_token === "mock_link_token") {
-        // Run simulated public token exchange
         await fetch('/api/exchange_public_token', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -383,123 +478,6 @@ export default function Home() {
     }
   };
 
-  // --- Calculations for Overview Analytics ---
-  const totalBalance = useMemo(() => {
-    return accounts.reduce((sum, acc) => sum + (acc.balance_available ?? acc.balance_current ?? 0), 0);
-  }, [accounts]);
-
-  const bofABalance = useMemo(() => {
-    return accounts
-      .filter(acc => acc.institution === "Bank of America")
-      .reduce((sum, acc) => sum + (acc.balance_available ?? acc.balance_current ?? 0), 0);
-  }, [accounts]);
-
-  const cashAppBalance = useMemo(() => {
-    return accounts
-      .filter(acc => acc.institution.includes("Cash App"))
-      .reduce((sum, acc) => sum + (acc.balance_available ?? acc.balance_current ?? 0), 0);
-  }, [accounts]);
-
-  // Expenses data calculation for Pie Chart
-  const expenseSummary = useMemo(() => {
-    const expenses = transactions.filter(t => t.amount > 0 && t.category !== 'Income');
-    const categoriesMap: Record<string, number> = {};
-    let totalExpensesSum = 0;
-
-    expenses.forEach(t => {
-      const cat = t.category || 'Uncategorized';
-      categoriesMap[cat] = (categoriesMap[cat] || 0) + t.amount;
-      totalExpensesSum += t.amount;
-    });
-
-    const slices = Object.entries(categoriesMap).map(([category, amount]) => ({
-      category,
-      amount,
-      percentage: totalExpensesSum > 0 ? amount / totalExpensesSum : 0,
-      color: CATEGORY_COLORS[category] || CATEGORY_COLORS.Other
-    })).sort((a, b) => b.amount - a.amount);
-
-    return { slices, totalExpensesSum };
-  }, [transactions]);
-
-  // Balance history calculation for Spline Line Chart
-  const balanceHistory = useMemo(() => {
-    if (transactions.length === 0) return [];
-    
-    // Sort transactions chronologically
-    const sorted = [...transactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    
-    // Group transactions by date
-    const dailyMap: Record<string, number> = {};
-    sorted.forEach(t => {
-      // In Plaid format: amount is positive for expense/debit, negative for credit/income
-      // So transaction daily change = -amount
-      const dateStr = t.date;
-      dailyMap[dateStr] = (dailyMap[dateStr] || 0) - t.amount;
-    });
-
-    const dailyChanges = Object.entries(dailyMap).map(([date, change]) => ({
-      date,
-      change
-    })).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-    // Back-calculate historical balances starting from the current total balance
-    const history: { date: string; balance: number }[] = [];
-    let currentCalc = totalBalance;
-    
-    // Process backwards to calculate the previous points
-    for (let i = dailyChanges.length - 1; i >= 0; i--) {
-      history.unshift({
-        date: dailyChanges[i].date,
-        balance: currentCalc
-      });
-      currentCalc -= dailyChanges[i].change;
-    }
-
-    return history;
-  }, [transactions, totalBalance]);
-
-  // Filtered transactions for Ledger
-  const filteredTxs = useMemo(() => {
-    return transactions.filter(t => {
-      const matchesSearch = t.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                            (t.notes || '').toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = categoryFilter === 'All' || t.category === categoryFilter;
-      const matchesInstitution = institutionFilter === 'All' || t.institution === institutionFilter;
-      return matchesSearch && matchesCategory && matchesInstitution;
-    });
-  }, [transactions, searchQuery, categoryFilter, institutionFilter]);
-
-  // Cash App transaction lists and flows
-  const cashAppTxs = useMemo(() => {
-    return transactions.filter(t => t.institution.includes("Cash App"));
-  }, [transactions]);
-
-  const cashAppFlow = useMemo(() => {
-    let sent = 0;
-    let received = 0;
-    cashAppTxs.forEach(t => {
-      if (t.amount > 0) {
-        sent += t.amount;
-      } else {
-        received += Math.abs(t.amount);
-      }
-    });
-    return { sent, received, net: received - sent };
-  }, [cashAppTxs]);
-
-  // Dropdown list contents for ledger filters
-  const uniqueCategories = useMemo(() => {
-    const cats = new Set(transactions.map(t => t.category).filter(Boolean));
-    return ['All', ...Array.from(cats)];
-  }, [transactions]);
-
-  const uniqueInstitutions = useMemo(() => {
-    const insts = new Set(transactions.map(t => t.institution).filter(Boolean));
-    return ['All', ...Array.from(insts)];
-  }, [transactions]);
-
-
   // SVG Area Chart drawing helper
   const drawAreaChart = () => {
     if (balanceHistory.length < 2) return null;
@@ -518,7 +496,6 @@ export default function Home() {
     const minBal = Math.min(...balances, 0);
     const balRange = maxBal - minBal || 1;
 
-    // Build path coordinates
     const points = balanceHistory.map((h, i) => {
       const x = paddingLeft + (i / (balanceHistory.length - 1)) * graphWidth;
       const y = paddingTop + graphHeight - ((h.balance - minBal) / balRange) * graphHeight;
@@ -528,7 +505,6 @@ export default function Home() {
     const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
     const areaPath = `${linePath} L ${points[points.length - 1].x} ${paddingTop + graphHeight} L ${points[0].x} ${paddingTop + graphHeight} Z`;
 
-    // Horizontal grid lines
     const gridLines = [];
     for (let i = 0; i <= 4; i++) {
       const yVal = minBal + (i / 4) * balRange;
@@ -540,12 +516,11 @@ export default function Home() {
       <svg viewBox={`0 0 ${width} ${height}`} width="100%" height="220" className="overflow-visible">
         <defs>
           <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#4e80e4" stopOpacity="0.35" />
-            <stop offset="100%" stopColor="#4e80e4" stopOpacity="0.0" />
+            <stop offset="0%" stopColor="#397ef7" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="#397ef7" stopOpacity="0.0" />
           </linearGradient>
         </defs>
         
-        {/* Grid lines */}
         {gridLines.map((line, i) => (
           <g key={i}>
             <line 
@@ -553,7 +528,7 @@ export default function Home() {
               y1={line.y} 
               x2={width - paddingRight} 
               y2={line.y} 
-              stroke="rgba(255,255,255,0.06)" 
+              stroke="rgba(255,255,255,0.08)" 
               strokeWidth="1" 
             />
             <text 
@@ -568,19 +543,15 @@ export default function Home() {
           </g>
         ))}
 
-        {/* Gradient Area */}
         <path d={areaPath} fill="url(#areaGrad)" />
-        
-        {/* Line */}
-        <path d={linePath} fill="none" stroke="#4e80e4" strokeWidth="2" strokeLinecap="round" />
+        <path d={linePath} fill="none" stroke="#397ef7" strokeWidth="2" strokeLinecap="round" />
 
-        {/* Date labels on X axis */}
         {points.length > 1 && [points[0], points[Math.floor(points.length / 2)], points[points.length - 1]].map((p, idx) => (
           <text
             key={idx}
             x={p.x}
             y={height - 8}
-            fill="#9ca3af"
+            fill="#cbd5e1"
             fontSize="10"
             textAnchor={idx === 0 ? "start" : idx === 2 ? "end" : "middle"}
           >
@@ -595,9 +566,9 @@ export default function Home() {
   const drawDoughnutChart = () => {
     if (expenseSummary.totalExpensesSum === 0) {
       return (
-        <div className="flex flex-col items-center justify-center h-48 text-gray-500">
-          <HelpCircle size={32} className="mb-2" />
-          <p className="text-sm">No expenses in this period</p>
+        <div className="flex flex-col items-center justify-center h-48 text-slate-300">
+          <HelpCircle size={32} className="mb-2 text-[#397ef7]" />
+          <p className="text-sm font-semibold">No expenses in this period</p>
         </div>
       );
     }
@@ -632,20 +603,19 @@ export default function Home() {
             })}
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-xs uppercase text-gray-400 font-semibold tracking-wider">Total Spent</span>
+            <span className="text-xs uppercase text-slate-300 font-bold tracking-wider">Total Spent</span>
             <span className="text-lg font-bold text-white">${expenseSummary.totalExpensesSum.toFixed(2)}</span>
           </div>
         </div>
         
-        {/* Legends list */}
         <div className="flex-1 space-y-2 max-h-48 overflow-y-auto w-full pr-2">
           {expenseSummary.slices.map((slice, idx) => (
             <div key={idx} className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: slice.color }}></span>
-                <span className="text-gray-300 font-medium">{slice.category}</span>
+                <span className="text-slate-200 font-medium">{slice.category}</span>
               </div>
-              <span className="text-white font-semibold">
+              <span className="text-white font-bold">
                 ${slice.amount.toFixed(2)} ({(slice.percentage * 100).toFixed(1)}%)
               </span>
             </div>
@@ -655,23 +625,25 @@ export default function Home() {
     );
   };
 
-
-  // --- Render Splash Screen ---
+  // --- Render Splash Screen (Conditional Return AFTER all hooks) ---
   if (isSplashActive) {
     return (
-      <div className="fixed inset-0 bg-black flex flex-col justify-center items-center z-50 animate-splash">
+      <div className="fixed inset-0 bg-black flex flex-col justify-center items-center z-50 animate-splash p-4">
         <div className="flex flex-col items-center text-center">
-          <div className="text-5xl sm:text-6xl font-bold tracking-tight text-white mb-6 font-outfit">
-            💸 My Munyun
+          <div className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white mb-6 font-outfit">
+            💸 My <span className="text-[#397ef7]">Munyun</span>
           </div>
-          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-6"></div>
-          <div className="text-xs font-semibold text-gray-400 tracking-widest uppercase">
+          <div className="w-12 h-12 border-4 border-[#397ef7] border-t-transparent rounded-full animate-spin mb-6"></div>
+          <div className="text-xs sm:text-sm font-bold text-slate-200 tracking-widest uppercase bg-[#397ef7]/10 px-4 py-2 rounded-full border border-[#397ef7]/30">
             Your Digital Munyun Advisor 💰️
           </div>
         </div>
       </div>
     );
   }
+
+
+
 
   // --- Render Auth Screens ---
   if (!isLoggedIn) {
