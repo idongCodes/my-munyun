@@ -688,8 +688,8 @@ export default function Home() {
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-[#0e2a5e] via-[#040c1b] to-black flex items-center justify-center p-6 sm:p-10">
-        <div className="w-full max-w-md animate-login-instant">
-          <div className="flex flex-col items-center text-center gap-4 sm:gap-6 mb-10 sm:mb-14">
+        <div className="w-full max-w-md animate-login-instant flex flex-col gap-8 sm:gap-12 py-4 sm:py-8">
+          <div className="flex flex-col items-center text-center gap-4 sm:gap-5">
             <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white font-outfit flex items-center justify-center gap-3.5 sm:gap-5">
               <span>💸</span>
               <span>My</span>
@@ -700,7 +700,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="custom-card relative overflow-hidden p-6 sm:p-8 border-[#397ef7]/30 shadow-[0_0_35px_rgba(57,126,247,0.2)] my-6 sm:my-10">
+          <div className="custom-card relative overflow-hidden p-7 sm:p-10 border-[#397ef7]/30 shadow-[0_0_40px_rgba(57,126,247,0.2)]">
             {/* SETUP TOTP WIZARD */}
             {isSettingUpTotp ? (
               <div className="space-y-6 sm:space-y-7">
@@ -941,7 +941,7 @@ export default function Home() {
             )}
           </div>
           
-          <div className="text-center mt-8 sm:mt-10 text-xs text-slate-300 tracking-wider font-semibold px-4">
+          <div className="text-center text-xs text-slate-300 tracking-wider font-semibold px-4">
             PROTECTED BY AES-256 LOCAL DATABASE ENCRYPTION.
           </div>
         </div>
