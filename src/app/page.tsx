@@ -646,33 +646,7 @@ export default function Home() {
   // --- Render Splash Screen (Conditional Return AFTER all hooks) ---
   if (isSplashActive) {
     return (
-      <div className="fixed inset-0 h-screen min-h-screen h-[100vh] min-h-[100vh] w-screen min-w-screen w-[100vw] bg-gradient-to-b from-[#0e2a5e] via-[#040c1b] to-black flex flex-col justify-center items-center z-50 animate-splash px-4 py-6 sm:p-12 relative overflow-hidden">
-        {/* Top Right Navigation: Register | Login */}
-        <div className="absolute top-4 right-4 sm:top-6 sm:right-8 z-50 flex items-center gap-2.5 text-xs sm:text-sm font-semibold tracking-wider">
-          <button 
-            type="button" 
-            onClick={() => {
-              setIsSplashActive(false);
-              setIsSettingUpTotp(true);
-              setAuthError('');
-            }}
-            className="text-slate-300 hover:text-white transition-colors cursor-pointer"
-          >
-            Register
-          </button>
-          <span className="text-slate-600 font-mono select-none">|</span>
-          <button 
-            type="button" 
-            onClick={() => {
-              setIsSplashActive(false);
-              setIsSettingUpTotp(false);
-              setAuthError('');
-            }}
-            className="text-slate-300 hover:text-white transition-colors cursor-pointer"
-          >
-            Login
-          </button>
-        </div>
+      <div className="fixed inset-0 h-screen min-h-screen h-[100vh] min-h-[100vh] w-screen min-w-screen w-[100vw] bg-gradient-to-b from-[#0e2a5e] via-[#040c1b] to-black flex flex-col justify-center items-center z-50 animate-splash px-4 py-6 sm:p-12">
         <div className="flex flex-col items-center justify-center gap-3 sm:gap-4 text-center max-w-lg mx-auto w-full h-full px-4 sm:px-6 py-2">
           {/* Main Title Heading */}
           <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white font-outfit leading-tight px-4 py-1 mb-1 flex items-center justify-center gap-3 sm:gap-4 flex-wrap">
