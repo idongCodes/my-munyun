@@ -1,12 +1,16 @@
 "use client";
 
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import Link from 'next/link';
+import { Home, Info, LayoutDashboard, Mail } from 'lucide-react';
 
 export default function Footer() {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -16,10 +20,23 @@ export default function Footer() {
     };
     checkAuth();
     
-    // Poll/listen for session updates
+    // Listen for session updates
     const interval = setInterval(checkAuth, 500);
     return () => clearInterval(interval);
   }, []);
+
+  const handleTouchStart = (name: string) => {
+    longPressTimer.current = setTimeout(() => {
+      setActiveTooltip(name);
+    }, 200); // triggers tooltip on long press
+  };
+
+  const handleTouchEnd = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+    }
+    setTimeout(() => setActiveTooltip(null), 1200); // hide tooltip after release
+  };
 
   if (!mounted) return null;
 
@@ -35,23 +52,74 @@ export default function Footer() {
 
   const currentYear = new Date().getFullYear();
 
+  const navItems = [
+    { name: 'Home', icon: Home, href: '/' },
+    { name: 'About', icon: Info, href: '/about' },
+    { name: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
+    { name: 'Contact', icon: Mail, href: 'mailto:support@mymunyun.com', isExternal: true },
+  ];
+
   return (
-    <footer className="w-full border-t border-slate-800/80 bg-slate-950/90 backdrop-blur-md py-5 px-4 text-center text-xs text-slate-400 font-sans tracking-wide z-40">
-      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2.5 px-4">
-        <div className="flex items-center justify-center gap-1.5 flex-wrap">
-          <span>&copy; {currentYear}. All Rights Reserved.</span>
-          <span className="font-semibold text-slate-200">💸 My Munyun.</span>
-        </div>
-        <div>
-          Web App made by{' '}
-          <a
-            href="https://www.instagram.com/idongcodes/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[#397ef7] hover:text-[#5fa0ff] hover:underline font-bold transition-colors"
-          >
-            idongcodes
-          </a>
+    <footer className="w-full border-t border-slate-800/80 bg-slate-950/90 backdrop-blur-md py-6 px-4 text-center text-xs text-slate-400 font-sans tracking-wide z-40">
+      <div className="max-w-7xl mx-auto flex flex-col items-center gap-4 px-4">
+        {/* Navigation Icons Only Row with Custom Tooltips */}
+        <nav className="flex items-center justify-center gap-4 sm:gap-6 border-b border-slate-800/60 pb-4 w-full">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isTooltipVisible = activeTooltip === item.name;
+
+            const content = (
+              <div 
+                className="relative group p-2 rounded-xl hover:bg-slate-900/80 transition-all cursor-pointer active:scale-95"
+                onTouchStart={() => handleTouchStart(item.name)}
+                onTouchEnd={handleTouchEnd}
+                onMouseDown={() => handleTouchStart(item.name)}
+                onMouseUp={handleTouchEnd}
+                onMouseLeave={handleTouchEnd}
+              >
+                <Icon size={24} className="text-[#397ef7] group-hover:scale-110 transition-transform" />
+                
+                {/* Floating Custom Tooltip */}
+                <div 
+                  className={`absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[11px] font-bold py-1.5 px-3 rounded-lg border border-[#397ef7]/40 shadow-xl transition-all duration-200 pointer-events-none whitespace-nowrap ${
+                    isTooltipVisible ? 'opacity-100 scale-100 -translate-y-1' : 'opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 group-hover:-translate-y-1'
+                  }`}
+                >
+                  <span>{item.name}</span>
+                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 border-r border-b border-[#397ef7]/40 rotate-45"></div>
+                </div>
+              </div>
+            );
+
+            return item.isExternal ? (
+              <a key={item.name} href={item.href}>
+                {content}
+              </a>
+            ) : (
+              <Link key={item.name} href={item.href}>
+                {content}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Copyright & Creator Row */}
+        <div className="flex flex-col sm:flex-row items-center justify-between w-full gap-2.5">
+          <div className="flex items-center justify-center gap-1.5 flex-wrap">
+            <span>&copy; {currentYear}. All Rights Reserved.</span>
+            <span className="font-semibold text-slate-200">💸 My Munyun.</span>
+          </div>
+          <div>
+            Web App made by{' '}
+            <a
+              href="https://www.instagram.com/idongcodes/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#397ef7] hover:text-[#5fa0ff] hover:underline font-bold transition-colors"
+            >
+              idongcodes
+            </a>
+          </div>
         </div>
       </div>
     </footer>
