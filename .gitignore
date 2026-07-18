@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# IDE/Agent specific files
+.claude/
+.agents/
+.gemini/
+data.db
