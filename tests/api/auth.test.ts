@@ -48,18 +48,10 @@ describe('Auth API Route (api/auth)', () => {
   });
 
   it('should handle TOTP verification with invalid code', async () => {
-    const setupReq = new Request('http://localhost/api/auth', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'totp_setup' })
-    });
-    const setupRes = await POST(setupReq);
-    const setupData = await setupRes.json();
-
     const verifyReq = new Request('http://localhost/api/auth', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'totp_verify', secret: setupData.secret, code: '000000' })
+      body: JSON.stringify({ action: 'totp_verify', secret: 'KVKFKRCPNZQUYMLXMC000000', code: '000000' })
     });
 
     const verifyRes = await POST(verifyReq);
