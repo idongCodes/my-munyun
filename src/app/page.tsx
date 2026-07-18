@@ -663,17 +663,17 @@ export default function Home() {
           </div>
 
           {/* Witty CLI Terminal Box */}
-          <div className="w-full max-w-md bg-slate-950/95 border border-[#397ef7]/45 rounded-2xl py-6 px-6 sm:py-8 sm:px-10 shadow-[0_0_35px_rgba(57,126,247,0.2)] text-left font-mono text-xs sm:text-sm my-2">
-            <div className="flex items-center gap-2 mb-4 border-b border-slate-800/90 pb-3 px-2">
+          <div className="w-full max-w-md bg-slate-950/95 border border-[#397ef7]/45 rounded-2xl p-4 sm:p-5 shadow-[0_0_35px_rgba(57,126,247,0.2)] text-left font-mono text-xs sm:text-sm my-2">
+            <div className="flex items-center gap-2 mb-2.5 border-b border-slate-800/90 pb-2 px-1">
               <span className="w-3 h-3 rounded-full bg-red-500/80 inline-block"></span>
               <span className="w-3 h-3 rounded-full bg-yellow-500/80 inline-block"></span>
               <span className="w-3 h-3 rounded-full bg-green-500/80 inline-block"></span>
-              <span className="text-[10px] text-slate-400 font-sans ml-auto uppercase tracking-wider font-semibold px-2">munyun-cli v2.4</span>
+              <span className="text-[10px] text-slate-400 font-sans ml-auto uppercase tracking-wider font-semibold px-1">munyun-cli v2.4</span>
             </div>
-            <div className="text-[#397ef7] font-semibold flex items-center gap-3 min-h-[52px] py-4 px-5 sm:px-7 bg-slate-900/50 rounded-xl border border-slate-800/60 shadow-inner overflow-hidden">
-              <span className="text-emerald-400 font-bold text-base px-2 flex-shrink-0">$</span>
-              <span className="text-slate-100 flex-1 leading-relaxed px-3 sm:px-4 break-words overflow-hidden">{CLI_MESSAGES[cliIndex]}</span>
-              <span className="w-2.5 h-4 bg-[#397ef7] animate-pulse inline-block flex-shrink-0 rounded-xs mx-1"></span>
+            <div className="text-[#397ef7] font-semibold flex items-center gap-2 min-h-[40px] py-2.5 px-3 sm:px-4 bg-slate-900/50 rounded-xl border border-slate-800/60 shadow-inner overflow-hidden">
+              <span className="text-emerald-400 font-bold text-base px-1 flex-shrink-0">$</span>
+              <span className="text-slate-100 flex-1 leading-relaxed px-1.5 break-words overflow-hidden">{CLI_MESSAGES[cliIndex]}</span>
+              <span className="w-2.5 h-4 bg-[#397ef7] animate-pulse inline-block flex-shrink-0 rounded-xs mx-0.5"></span>
             </div>
           </div>
         </div>
