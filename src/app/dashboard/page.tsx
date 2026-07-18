@@ -1,6 +1,7 @@
 "use client";
 
 import Link from 'next/link';
+import { Settings } from 'lucide-react';
 
 export default function DashboardPage() {
   return (
@@ -22,8 +23,17 @@ export default function DashboardPage() {
           </Link>
         </header>
 
-        {/* Empty Dashboard Shell Container */}
-        <section className="flex flex-col items-center justify-center min-h-[400px] rounded-2xl border border-dashed border-slate-800/90 bg-slate-950/40 p-12 text-center space-y-4">
+        {/* Dashboard Shell Container with Gear Icon at Top Right */}
+        <section className="relative flex flex-col items-center justify-center min-h-[400px] rounded-2xl border border-dashed border-slate-800/90 bg-slate-950/40 p-12 text-center space-y-4">
+          {/* Top Right Gear Settings Icon */}
+          <Link 
+            href="/dashboard/settings"
+            className="absolute top-4 right-4 sm:top-6 sm:right-6 p-2.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/60 hover:border-[#397ef7]/60 transition-all shadow-md active:scale-95 group cursor-pointer"
+            title="User Settings"
+          >
+            <Settings size={20} className="group-hover:rotate-45 transition-transform text-[#397ef7]" />
+          </Link>
+
           <div className="w-16 h-16 rounded-full bg-[#397ef7]/10 flex items-center justify-center text-[#397ef7] text-2xl font-bold">
             📊
           </div>
