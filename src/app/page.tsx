@@ -646,7 +646,33 @@ export default function Home() {
   // --- Render Splash Screen (Conditional Return AFTER all hooks) ---
   if (isSplashActive) {
     return (
-      <div className="fixed inset-0 h-screen min-h-screen h-[100vh] min-h-[100vh] w-screen min-w-screen w-[100vw] bg-gradient-to-b from-[#0e2a5e] via-[#040c1b] to-black flex flex-col justify-center items-center z-50 animate-splash px-4 py-6 sm:p-12">
+      <div className="fixed inset-0 h-screen min-h-screen h-[100vh] min-h-[100vh] w-screen min-w-screen w-[100vw] bg-gradient-to-b from-[#0e2a5e] via-[#040c1b] to-black flex flex-col justify-center items-center z-50 animate-splash px-4 py-6 sm:p-12 relative overflow-hidden">
+        {/* Top Right Navigation: Register | Login */}
+        <div className="absolute top-4 right-4 sm:top-6 sm:right-8 z-50 flex items-center gap-2.5 text-xs sm:text-sm font-semibold tracking-wider bg-slate-950/85 border border-[#397ef7]/35 px-4 py-2 rounded-full backdrop-blur-md shadow-[0_0_15px_rgba(57,126,247,0.2)]">
+          <button 
+            type="button" 
+            onClick={() => {
+              setIsSplashActive(false);
+              setIsSettingUpTotp(true);
+              setAuthError('');
+            }}
+            className="text-slate-300 hover:text-white transition-colors cursor-pointer"
+          >
+            Register
+          </button>
+          <span className="text-slate-600 font-mono select-none">|</span>
+          <button 
+            type="button" 
+            onClick={() => {
+              setIsSplashActive(false);
+              setIsSettingUpTotp(false);
+              setAuthError('');
+            }}
+            className="text-slate-300 hover:text-white transition-colors cursor-pointer"
+          >
+            Login
+          </button>
+        </div>
         <div className="flex flex-col items-center justify-center gap-3 sm:gap-4 text-center max-w-lg mx-auto w-full h-full px-4 sm:px-6 py-2">
           {/* Main Title Heading */}
           <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white font-outfit leading-tight px-4 py-1 mb-1 flex items-center justify-center gap-3 sm:gap-4 flex-wrap">
@@ -687,7 +713,31 @@ export default function Home() {
   // --- Render Auth Screens ---
   if (!isLoggedIn) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-[#0e2a5e] via-[#040c1b] to-black flex items-center justify-center p-6 sm:p-10">
+      <div className="relative min-h-screen bg-gradient-to-b from-[#0e2a5e] via-[#040c1b] to-black flex items-center justify-center p-6 sm:p-10 overflow-hidden">
+        {/* Top Right Navigation: Register | Login */}
+        <div className="absolute top-4 right-4 sm:top-6 sm:right-8 z-50 flex items-center gap-2.5 text-xs sm:text-sm font-semibold tracking-wider bg-slate-950/85 border border-[#397ef7]/35 px-4 py-2 rounded-full backdrop-blur-md shadow-[0_0_15px_rgba(57,126,247,0.2)]">
+          <button 
+            type="button" 
+            onClick={() => {
+              setIsSettingUpTotp(true);
+              setAuthError('');
+            }}
+            className={`hover:text-white transition-colors cursor-pointer ${isSettingUpTotp ? 'text-[#397ef7] font-bold' : 'text-slate-300'}`}
+          >
+            Register
+          </button>
+          <span className="text-slate-600 font-mono select-none">|</span>
+          <button 
+            type="button" 
+            onClick={() => {
+              setIsSettingUpTotp(false);
+              setAuthError('');
+            }}
+            className={`hover:text-white transition-colors cursor-pointer ${!isSettingUpTotp ? 'text-[#397ef7] font-bold' : 'text-slate-300'}`}
+          >
+            Login
+          </button>
+        </div>
         <div className="w-full max-w-md animate-login-instant flex flex-col gap-8 sm:gap-12 py-4 sm:py-8">
           <div className="flex flex-col items-center text-center gap-4 sm:gap-5">
             <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white font-outfit flex items-center justify-center gap-3.5 sm:gap-5">
