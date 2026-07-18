@@ -649,19 +649,19 @@ export default function Home() {
       <div className="fixed inset-0 bg-black flex flex-col justify-center items-center z-50 animate-splash p-6 sm:p-12">
         <div className="flex flex-col items-center justify-center text-center max-w-lg mx-auto w-full">
           {/* Main Title Heading */}
-          <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white font-outfit leading-tight mb-6 sm:mb-8">
+          <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white font-outfit leading-tight mb-10 sm:mb-14">
             💸 My <span className="text-[#397ef7]">Munyun</span>
           </h1>
           
           {/* Subheading Advisor Badge */}
-          <div className="my-5 sm:my-7">
+          <div className="my-8 sm:my-12">
             <p className="text-xs sm:text-sm font-bold text-slate-200 tracking-[0.2em] uppercase bg-[#397ef7]/10 px-7 py-3 rounded-full border border-[#397ef7]/35 shadow-[0_0_25px_rgba(57,126,247,0.25)] inline-block">
               Your Digital Munyun Advisor 💰️
             </p>
           </div>
 
           {/* Witty CLI Terminal Box */}
-          <div className="w-full max-w-md bg-slate-950/95 border border-[#397ef7]/45 rounded-2xl p-5 sm:p-6 shadow-[0_0_35px_rgba(57,126,247,0.2)] text-left font-mono text-xs sm:text-sm mt-8 sm:mt-12">
+          <div className="w-full max-w-md bg-slate-950/95 border border-[#397ef7]/45 rounded-2xl p-5 sm:p-6 shadow-[0_0_35px_rgba(57,126,247,0.2)] text-left font-mono text-xs sm:text-sm mt-12 sm:mt-16">
             <div className="flex items-center gap-2 mb-3 border-b border-slate-800/90 pb-2.5">
               <span className="w-3 h-3 rounded-full bg-red-500/80 inline-block"></span>
               <span className="w-3 h-3 rounded-full bg-yellow-500/80 inline-block"></span>
