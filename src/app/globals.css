@@ -267,7 +267,7 @@ body {
 }
 
 .animate-splash {
-  animation: splash-fade 3.0s forwards;
+  animation: splash-fade 6.0s forwards;
 }
 
 .animate-login-instant {
