@@ -648,7 +648,7 @@ export default function Home() {
     return (
       <div className="fixed inset-0 h-screen min-h-screen h-[100vh] min-h-[100vh] w-screen min-w-screen w-[100vw] bg-gradient-to-b from-[#0e2a5e] via-[#040c1b] to-black flex flex-col justify-center items-center z-50 animate-splash px-4 py-6 sm:p-12 relative overflow-hidden">
         {/* Top Right Navigation: Register | Login */}
-        <div className="absolute top-4 right-4 sm:top-6 sm:right-8 z-50 flex items-center gap-2.5 text-xs sm:text-sm font-semibold tracking-wider bg-slate-950/85 border border-[#397ef7]/35 px-4 py-2 rounded-full backdrop-blur-md shadow-[0_0_15px_rgba(57,126,247,0.2)]">
+        <div className="absolute top-4 right-4 sm:top-6 sm:right-8 z-50 flex items-center gap-2.5 text-xs sm:text-sm font-semibold tracking-wider">
           <button 
             type="button" 
             onClick={() => {
@@ -715,7 +715,7 @@ export default function Home() {
     return (
       <div className="relative min-h-screen bg-gradient-to-b from-[#0e2a5e] via-[#040c1b] to-black flex items-center justify-center p-6 sm:p-10 overflow-hidden">
         {/* Top Right Navigation: Register | Login */}
-        <div className="absolute top-4 right-4 sm:top-6 sm:right-8 z-50 flex items-center gap-2.5 text-xs sm:text-sm font-semibold tracking-wider bg-slate-950/85 border border-[#397ef7]/35 px-4 py-2 rounded-full backdrop-blur-md shadow-[0_0_15px_rgba(57,126,247,0.2)]">
+        <div className="absolute top-4 right-4 sm:top-6 sm:right-8 z-50 flex items-center gap-2.5 text-xs sm:text-sm font-semibold tracking-wider">
           <button 
             type="button" 
             onClick={() => {
