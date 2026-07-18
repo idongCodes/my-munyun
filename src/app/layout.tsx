@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Outfit, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+import Footer from "./Footer";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -26,7 +27,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${outfit.variable} ${plusJakartaSans.variable}`}>
-      <body className="bg-black text-slate-100 min-h-screen antialiased">{children}</body>
+      <body className="bg-black text-slate-100 min-h-screen antialiased flex flex-col justify-between">
+        <div className="flex-1 w-full">{children}</div>
+        <Footer />
+      </body>
     </html>
   );
 }
