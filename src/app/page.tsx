@@ -20,9 +20,18 @@ const CATEGORY_COLORS: Record<string, string> = {
   Uncategorized: '#9ca3af'
 };
 
+const CLI_MESSAGES = [
+  "initializing quantum_munyun_engine.sh ... [OK]",
+  "establishing encrypted link to BofA mainframe ... [CONNECTED]",
+  "scanning cash app transaction frequency ... [SECURE]",
+  "calculating inflation defense matrix ... [99.9% SHIELD]",
+  "compiling digital munyun ledger ... [READY]"
+];
+
 export default function Home() {
   // Splash screen state
   const [isSplashActive, setIsSplashActive] = useState(true);
+  const [cliIndex, setCliIndex] = useState(0);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginTime, setLoginTime] = useState<string | null>(null);
 
@@ -104,6 +113,15 @@ export default function Home() {
     
     return () => clearTimeout(timer);
   }, []);
+
+  // Witty CLI rotator effect on splash screen
+  useEffect(() => {
+    if (!isSplashActive) return;
+    const interval = setInterval(() => {
+      setCliIndex((prev) => (prev + 1) % CLI_MESSAGES.length);
+    }, 550);
+    return () => clearInterval(interval);
+  }, [isSplashActive]);
 
   // Fetch Dashboard data once logged in
   useEffect(() => {
@@ -629,19 +647,30 @@ export default function Home() {
   if (isSplashActive) {
     return (
       <div className="fixed inset-0 bg-black flex flex-col justify-center items-center z-50 animate-splash p-6 sm:p-12">
-        <div className="flex flex-col items-center justify-center text-center max-w-lg mx-auto space-y-8 sm:space-y-10">
-          <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white font-outfit leading-tight mb-2">
+        <div className="flex flex-col items-center justify-center text-center max-w-xl mx-auto space-y-6 sm:space-y-8">
+          <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white font-outfit leading-tight mb-1">
             💸 My <span className="text-[#397ef7]">Munyun</span>
           </h1>
           
-          <div className="py-2">
-            <p className="text-xs sm:text-sm font-bold text-slate-200 tracking-[0.2em] uppercase bg-[#397ef7]/10 px-6 py-3 rounded-full border border-[#397ef7]/35 shadow-[0_0_20px_rgba(57,126,247,0.25)] inline-block">
+          <div>
+            <p className="text-xs sm:text-sm font-bold text-slate-200 tracking-[0.2em] uppercase bg-[#397ef7]/10 px-6 py-2.5 rounded-full border border-[#397ef7]/35 shadow-[0_0_20px_rgba(57,126,247,0.25)] inline-block">
               Your Digital Munyun Advisor 💰️
             </p>
           </div>
 
-          <div className="pt-6 sm:pt-8 flex items-center justify-center">
-            <div className="w-9 h-9 border-3 border-[#397ef7] border-t-transparent rounded-full animate-spin"></div>
+          {/* Witty CLI Terminal Box */}
+          <div className="w-full max-w-md bg-slate-950/90 border border-[#397ef7]/40 rounded-xl p-4 shadow-[0_0_30px_rgba(57,126,247,0.15)] text-left font-mono text-xs sm:text-sm">
+            <div className="flex items-center gap-2 mb-3 border-b border-slate-800/80 pb-2">
+              <span className="w-3 h-3 rounded-full bg-red-500/80 inline-block"></span>
+              <span className="w-3 h-3 rounded-full bg-yellow-500/80 inline-block"></span>
+              <span className="w-3 h-3 rounded-full bg-green-500/80 inline-block"></span>
+              <span className="text-[10px] text-slate-400 font-sans ml-auto uppercase tracking-wider font-semibold">munyun-cli v2.4</span>
+            </div>
+            <div className="text-[#397ef7] font-semibold flex items-center gap-2 min-h-[40px] px-1">
+              <span className="text-emerald-400 font-bold">$</span>
+              <span className="text-slate-100 flex-1">{CLI_MESSAGES[cliIndex]}</span>
+              <span className="w-2 h-4 bg-[#397ef7] animate-pulse inline-block"></span>
+            </div>
           </div>
         </div>
       </div>
