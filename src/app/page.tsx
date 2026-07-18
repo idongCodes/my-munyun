@@ -19,6 +19,9 @@ export default function Home() {
     // Always play splash screen animation when visiting '/'
     setShowSplash(true);
     setCliIndex(0);
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('munyun_splash_active', 'true');
+    }
 
     // Cycle through all 5 CLI messages over 5 seconds (1000ms per step)
     const messageInterval = setInterval(() => {
@@ -33,6 +36,9 @@ export default function Home() {
     // Guarantee splash screen plays for at least 5 seconds (5000ms)
     const splashTimer = setTimeout(() => {
       setShowSplash(false);
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('munyun_splash_active', 'false');
+      }
     }, 5000);
 
     return () => {

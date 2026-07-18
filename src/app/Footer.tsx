@@ -8,20 +8,22 @@ import { Home, Info, LayoutDashboard, Mail } from 'lucide-react';
 export default function Footer() {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isSplashActive, setIsSplashActive] = useState(false);
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     setMounted(true);
-    const checkAuth = () => {
-      const loggedIn = typeof window !== 'undefined' && sessionStorage.getItem('munyun_logged_in') === 'true';
-      setIsLoggedIn(loggedIn);
+    const checkState = () => {
+      if (typeof window !== 'undefined') {
+        const splashActive = sessionStorage.getItem('munyun_splash_active') === 'true';
+        setIsSplashActive(splashActive);
+      }
     };
-    checkAuth();
+    checkState();
     
-    // Listen for session updates
-    const interval = setInterval(checkAuth, 500);
+    // Listen for session and splash updates
+    const interval = setInterval(checkState, 200);
     return () => clearInterval(interval);
   }, []);
 
@@ -45,8 +47,8 @@ export default function Footer() {
     return null;
   }
 
-  // On home route /, only show when user is logged in
-  if (pathname === '/' && !isLoggedIn) {
+  // On home route /, do not show while splash screen animation is active
+  if (pathname === '/' && isSplashActive) {
     return null;
   }
 
