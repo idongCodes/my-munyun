@@ -647,21 +647,21 @@ export default function Home() {
   if (isSplashActive) {
     return (
       <div className="fixed inset-0 h-screen min-h-screen h-[100vh] min-h-[100vh] w-screen min-w-screen w-[100vw] bg-black flex flex-col justify-center items-center z-50 animate-splash p-6 sm:p-12 border border-red-500">
-        <div className="flex flex-col items-center justify-center text-center max-w-lg mx-auto w-full h-full border border-red-500 p-2">
+        <div className="flex flex-col items-center justify-evenly text-center max-w-lg mx-auto w-full h-full border border-red-500 p-2 py-6 sm:py-10">
           {/* Main Title Heading */}
-          <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white font-outfit leading-tight mb-10 sm:mb-14 border border-red-500 px-4 py-2">
+          <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white font-outfit leading-tight border border-red-500 px-4 py-2">
             💸 My <span className="text-[#397ef7]">Munyun</span>
           </h1>
           
           {/* Subheading Advisor Badge */}
-          <div className="my-8 sm:my-12 border border-red-500 p-1">
+          <div className="border border-red-500 p-1">
             <p className="text-xs sm:text-sm font-bold text-slate-200 tracking-[0.2em] uppercase bg-[#397ef7]/10 px-7 py-3 rounded-full border border-red-500 shadow-[0_0_25px_rgba(57,126,247,0.25)] inline-block">
               Your Digital Munyun Advisor 💰️
             </p>
           </div>
 
           {/* Witty CLI Terminal Box */}
-          <div className="w-full max-w-md bg-slate-950/95 border border-red-500 rounded-2xl p-5 sm:p-6 shadow-[0_0_35px_rgba(57,126,247,0.2)] text-left font-mono text-xs sm:text-sm mt-12 sm:mt-16">
+          <div className="w-full max-w-md bg-slate-950/95 border border-red-500 rounded-2xl p-5 sm:p-6 shadow-[0_0_35px_rgba(57,126,247,0.2)] text-left font-mono text-xs sm:text-sm">
             <div className="flex items-center gap-2 mb-3 border-b border-red-500 pb-2.5">
               <span className="w-3 h-3 rounded-full bg-red-500/80 inline-block border border-red-500"></span>
               <span className="w-3 h-3 rounded-full bg-yellow-500/80 inline-block border border-red-500"></span>
