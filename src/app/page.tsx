@@ -628,16 +628,20 @@ export default function Home() {
   // --- Render Splash Screen (Conditional Return AFTER all hooks) ---
   if (isSplashActive) {
     return (
-      <div className="fixed inset-0 bg-black flex flex-col justify-center items-center z-50 animate-splash p-4">
-        <div className="flex flex-col items-center justify-center text-center max-w-md mx-auto space-y-5">
-          <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white font-outfit leading-tight">
+      <div className="fixed inset-0 bg-black flex flex-col justify-center items-center z-50 animate-splash p-6 sm:p-12">
+        <div className="flex flex-col items-center justify-center text-center max-w-lg mx-auto space-y-8 sm:space-y-10">
+          <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white font-outfit leading-tight mb-2">
             💸 My <span className="text-[#397ef7]">Munyun</span>
           </h1>
-          <p className="text-xs sm:text-sm font-bold text-slate-200 tracking-widest uppercase bg-[#397ef7]/10 px-5 py-2.5 rounded-full border border-[#397ef7]/30 shadow-[0_0_15px_rgba(57,126,247,0.2)]">
-            Your Digital Munyun Advisor 💰️
-          </p>
-          <div className="pt-3 flex items-center justify-center">
-            <div className="w-8 h-8 border-3 border-[#397ef7] border-t-transparent rounded-full animate-spin"></div>
+          
+          <div className="py-2">
+            <p className="text-xs sm:text-sm font-bold text-slate-200 tracking-[0.2em] uppercase bg-[#397ef7]/10 px-6 py-3 rounded-full border border-[#397ef7]/35 shadow-[0_0_20px_rgba(57,126,247,0.25)] inline-block">
+              Your Digital Munyun Advisor 💰️
+            </p>
+          </div>
+
+          <div className="pt-6 sm:pt-8 flex items-center justify-center">
+            <div className="w-9 h-9 border-3 border-[#397ef7] border-t-transparent rounded-full animate-spin"></div>
           </div>
         </div>
       </div>
