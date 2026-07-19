@@ -133,6 +133,53 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Untitled 3-Step Process Walkthrough */}
+        <section className="custom-card p-8 sm:p-10 border-[#397ef7]/30 shadow-[0_0_50px_rgba(57,126,247,0.2)] max-w-5xl mx-auto w-full relative overflow-hidden">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
+            {/* Step 1 */}
+            <div className="flex flex-col items-start text-left gap-3 group">
+              <div className="flex items-center gap-3">
+                <span className="w-8 h-8 rounded-full bg-[#397ef7] text-white font-extrabold text-xs flex items-center justify-center shadow-[0_0_15px_rgba(57,126,247,0.5)]">
+                  01
+                </span>
+                <span className="text-[11px] font-bold uppercase tracking-widest text-[#397ef7]">Setup</span>
+              </div>
+              <h3 className="text-lg sm:text-xl font-extrabold text-white font-outfit">Connect Your Accounts</h3>
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                Securely link your checking, savings, and credit accounts in under 2 minutes with bank-grade 256-bit AES encryption.
+              </p>
+            </div>
+
+            {/* Step 2 */}
+            <div className="flex flex-col items-start text-left gap-3 group">
+              <div className="flex items-center gap-3">
+                <span className="w-8 h-8 rounded-full bg-[#397ef7] text-white font-extrabold text-xs flex items-center justify-center shadow-[0_0_15px_rgba(57,126,247,0.5)]">
+                  02
+                </span>
+                <span className="text-[11px] font-bold uppercase tracking-widest text-[#397ef7]">Automation</span>
+              </div>
+              <h3 className="text-lg sm:text-xl font-extrabold text-white font-outfit">Automate Intelligence</h3>
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                My Munyun automatically categorizes income streams, tracks recurring subscriptions, and monitors budgets in real time.
+              </p>
+            </div>
+
+            {/* Step 3 */}
+            <div className="flex flex-col items-start text-left gap-3 group">
+              <div className="flex items-center gap-3">
+                <span className="w-8 h-8 rounded-full bg-[#397ef7] text-white font-extrabold text-xs flex items-center justify-center shadow-[0_0_15px_rgba(57,126,247,0.5)]">
+                  03
+                </span>
+                <span className="text-[11px] font-bold uppercase tracking-widest text-[#397ef7]">Growth</span>
+              </div>
+              <h3 className="text-lg sm:text-xl font-extrabold text-white font-outfit">Reach Goals & Build Wealth</h3>
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                Set personalized wealth targets, monitor net worth milestones, and make confident financial decisions.
+              </p>
+            </div>
+          </div>
+        </section>
+
         {/* Untitled Features Grid Section */}
         <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 max-w-5xl mx-auto w-full pt-4">
           <div className="custom-card p-6 border-[#397ef7]/30 flex flex-col items-start text-left gap-3 group hover:border-[#397ef7]/60 transition-all duration-300">
