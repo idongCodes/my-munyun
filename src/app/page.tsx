@@ -252,7 +252,8 @@ export default function Home() {
               Define custom financial goals, monitor savings milestones, and track your long-term wealth progression.
             </p>
           </div>
-        </section>
+        </div>
+      </section>
       </div>
     </main>
   );
