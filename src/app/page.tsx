@@ -117,6 +117,22 @@ export default function Home() {
           </p>
         </div>
 
+        {/* App Intro Paragraph */}
+        <div className="max-w-2xl mx-auto space-y-4 text-center">
+          <p className="text-sm sm:text-base text-slate-200 leading-relaxed font-normal">
+            My Munyun is an all-in-one digital wealth advisor built to give you complete clarity and control over your financial life. By securely aggregating your bank accounts, income streams, recurring bills, and daily spending, it turns complex money management into effortless insights. Whether you&apos;re tracking direct deposits or setting ambitious savings milestones, My Munyun empowers you to reach your financial potential with confidence.
+          </p>
+          <div>
+            <Link 
+              href="/about" 
+              className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-[#397ef7] hover:text-[#5b96ff] transition-colors bg-[#397ef7]/10 hover:bg-[#397ef7]/20 border border-[#397ef7]/30 px-5 py-2.5 rounded-full shadow-sm"
+            >
+              <span>Read More</span>
+              <span className="text-base leading-none">→</span>
+            </Link>
+          </div>
+        </div>
+
         {/* Home Page Content Card */}
         <section className="custom-card p-8 sm:p-12 border-[#397ef7]/30 shadow-[0_0_50px_rgba(57,126,247,0.25)] max-w-2xl mx-auto flex flex-col items-center justify-center gap-6">
           <div className="space-y-3 text-center max-w-xl">
