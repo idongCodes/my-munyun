@@ -42,11 +42,6 @@ export default function Footer() {
 
   if (!mounted) return null;
 
-  // Do not show on /login or /register
-  if (pathname === '/login' || pathname === '/register') {
-    return null;
-  }
-
   // On home route /, do not show while splash screen animation is active
   if (pathname === '/' && isSplashActive) {
     return null;
