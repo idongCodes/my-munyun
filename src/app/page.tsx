@@ -133,33 +133,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Home Page Content Card */}
-        <section className="custom-card p-8 sm:p-12 border-[#397ef7]/30 shadow-[0_0_50px_rgba(57,126,247,0.25)] max-w-2xl mx-auto flex flex-col items-center justify-center gap-6">
-          <div className="space-y-3 text-center max-w-xl">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-white font-outfit tracking-tight">
-              Welcome to My Munyun
-            </h2>
-            <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
-              Your personal wealth aggregation portal. Manage your accounts, monitor budgets, and securely track transactions in one place.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-md pt-2">
-            <Link 
-              href="/login" 
-              className="btn-primary py-3.5 px-6 text-sm font-bold text-center block"
-            >
-              Log In to Portal
-            </Link>
-            <Link 
-              href="/register" 
-              className="btn-secondary py-3.5 px-6 text-sm font-bold text-center block"
-            >
-              Register an Account
-            </Link>
-          </div>
-        </section>
-
         {/* Untitled Features Grid Section */}
         <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 max-w-5xl mx-auto w-full pt-4">
           <div className="custom-card p-6 border-[#397ef7]/30 flex flex-col items-start text-left gap-3 group hover:border-[#397ef7]/60 transition-all duration-300">
