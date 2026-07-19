@@ -29,29 +29,44 @@ export default function Navbar() {
     return null;
   }
 
-  // Dynamic top-right link text based on route
+  // Dynamic top-right link controls based on route
   const getAuthLink = () => {
-    if (pathname === '/login') {
+    if (pathname === '/dashboard' || pathname.startsWith('/dashboard/')) {
       return (
         <Link 
-          href="/register" 
+          href="/dashboard/settings" 
           className="text-xs font-bold text-slate-300 hover:text-white bg-slate-900/70 hover:bg-slate-800 px-4 py-2 rounded-full border border-slate-700/60 hover:border-[#397ef7]/60 transition-all cursor-pointer shadow-md"
         >
-          Register an Account
+          Settings
         </Link>
       );
     }
-    if (pathname === '/register') {
-      return (
+
+    return (
+      <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-bold bg-slate-900/80 p-1 rounded-full border border-slate-800 shadow-md">
         <Link 
           href="/login" 
-          className="text-xs font-bold text-slate-300 hover:text-white bg-slate-900/70 hover:bg-slate-800 px-4 py-2 rounded-full border border-slate-700/60 hover:border-[#397ef7]/60 transition-all cursor-pointer shadow-md"
+          className={`px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
+            pathname === '/login' 
+              ? 'bg-[#397ef7] text-white shadow-sm' 
+              : 'text-slate-300 hover:text-white hover:bg-slate-800/80'
+          }`}
         >
-          Log in to an Account
+          Login
         </Link>
-      );
-    }
-    return null;
+        <span className="text-slate-600 font-light">|</span>
+        <Link 
+          href="/register" 
+          className={`px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
+            pathname === '/register' 
+              ? 'bg-[#397ef7] text-white shadow-sm' 
+              : 'text-slate-300 hover:text-white hover:bg-slate-800/80'
+          }`}
+        >
+          Register
+        </Link>
+      </div>
+    );
   };
 
   return (
