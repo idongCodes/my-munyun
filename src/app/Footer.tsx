@@ -107,9 +107,10 @@ export default function Footer() {
 
         {/* Copyright & Creator Row */}
         <div className="flex flex-col sm:flex-row items-center justify-between w-full gap-2.5">
-          <div className="flex items-center justify-center gap-1.5 flex-wrap">
-            <span>&copy; {currentYear}. All Rights Reserved.</span>
+          <div className="flex items-center justify-center gap-1 flex-wrap">
+            <span>&copy; {currentYear}</span>
             <span className="font-semibold text-slate-200">💸 My Munyun.</span>
+            <span>All Rights Reserved.</span>
           </div>
           <div>
             Web App made by{' '}
