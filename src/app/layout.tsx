@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Outfit, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+import Navbar from "./Navbar";
 import Footer from "./Footer";
 
 const outfit = Outfit({
@@ -40,7 +41,8 @@ export default function RootLayout({
         <link rel="shortcut icon" href="/icon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/icon.svg" type="image/svg+xml" />
       </head>
-      <body className="bg-black text-slate-100 min-h-screen antialiased flex flex-col justify-between">
+      <body className="bg-black text-slate-100 min-h-screen antialiased flex flex-col justify-between pt-14">
+        <Navbar />
         <div className="flex-1 w-full">{children}</div>
         <Footer />
       </body>
