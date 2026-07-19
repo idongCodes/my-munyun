@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Lock, AlertCircle, CheckCircle, User, Mail, Phone, Sparkles } from 'lucide-react';
+import { Lock, AlertCircle, CheckCircle, User, Mail, Phone, Sparkles, Eye, EyeOff, ShieldCheck, ArrowRight, ArrowLeft, Check, Compass, Target, Landmark, TrendingUp, CalendarCheck, DollarSign } from 'lucide-react';
 import QRCode from 'qrcode';
 
 interface AuthContainerProps {
@@ -15,11 +15,20 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
   const [mode, setMode] = useState<'login' | 'register'>(initialMode);
   
   // Registration form states
+  const [regStep, setRegStep] = useState<1 | 2 | 3>(1);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [preferredName, setPreferredName] = useState('');
   const [email, setEmail] = useState('');
   const [mobileNumber, setMobileNumber] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [selectedGoal, setSelectedGoal] = useState<string>('budget');
+  const [regSmsSent, setRegSmsSent] = useState(false);
+  const [regSmsCode, setRegSmsCode] = useState('');
   const [show2faSetup, setShow2faSetup] = useState(false);
 
   // Login form states
@@ -40,6 +49,7 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
   useEffect(() => {
     setMode(initialMode);
     setShow2faSetup(false);
+    setRegStep(1);
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       if (params.get('google_auth') === 'success') {
@@ -47,6 +57,24 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
       }
     }
   }, [initialMode]);
+
+  // Evaluate Password Strength
+  const calculatePasswordStrength = (pass: string) => {
+    let score = 0;
+    if (pass.length >= 8) score++;
+    if (/[A-Z]/.test(pass) && /[a-z]/.test(pass)) score++;
+    if (/[0-9]/.test(pass)) score++;
+    if (/[^A-Za-z0-9]/.test(pass)) score++;
+    return score;
+  };
+
+  const getPasswordStrengthLabel = (score: number) => {
+    if (score === 0) return { label: 'Too Weak', color: 'bg-zinc-700', text: 'text-zinc-400' };
+    if (score === 1) return { label: 'Weak', color: 'bg-rose-500', text: 'text-rose-400' };
+    if (score === 2) return { label: 'Fair', color: 'bg-amber-500', text: 'text-amber-400' };
+    if (score === 3) return { label: 'Good', color: 'bg-blue-500', text: 'text-blue-400' };
+    return { label: 'Strong', color: 'bg-emerald-500', text: 'text-emerald-400' };
+  };
 
   // Generate TOTP QR code when 2FA setup is requested
   useEffect(() => {
@@ -82,15 +110,93 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
     router.push('/');
   };
 
-  const handleRegisterSubmit = async (e: React.FormEvent) => {
+  // Step 1 -> Step 2 Validation
+  const handleRegStep1Next = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError('');
     setAuthSuccessMsg('');
 
-    if (!firstName.trim() || !lastName.trim() || !email.trim() || !mobileNumber.trim()) {
-      setAuthError('Please fill out all required fields (First Name, Last Name, Email, and Mobile Number).');
+    if (!firstName.trim() || !lastName.trim() || !email.trim() || !mobileNumber.trim() || !password) {
+      setAuthError('Please fill out all required fields.');
       return;
     }
+
+    if (password !== confirmPassword) {
+      setAuthError('Passwords do not match. Please check your password fields.');
+      return;
+    }
+
+    if (calculatePasswordStrength(password) < 2) {
+      setAuthError('Password is too weak. Must be at least 8 characters with numbers or special characters.');
+      return;
+    }
+
+    if (!agreeTerms) {
+      setAuthError('You must agree to the Terms of Service and Privacy Policy to proceed.');
+      return;
+    }
+
+    // Send SMS verification code for Step 2
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'sms_send', phone: mobileNumber })
+      });
+      const data = await res.json();
+      setRegSmsSent(true);
+      if (data.demoMode) {
+        setAuthSuccessMsg(`Security SMS code sent! (Demo code: ${data.code})`);
+      } else {
+        setAuthSuccessMsg(`SMS verification code sent to ${mobileNumber}.`);
+      }
+    } catch {
+      setRegSmsSent(true);
+      setAuthSuccessMsg(`SMS verification code sent to ${mobileNumber}. (Demo code: 123456)`);
+    }
+
+    setRegStep(2);
+  };
+
+  // Step 2 -> Step 3 Validation
+  const handleRegStep2Verify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError('');
+    setAuthSuccessMsg('');
+
+    if (!regSmsCode.trim()) {
+      setAuthError('Please enter the 6-digit SMS verification code.');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'sms_verify', code: regSmsCode })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setAuthSuccessMsg('Phone verified successfully!');
+        setRegStep(3);
+      } else {
+        setAuthError(data.message || 'Invalid SMS verification code.');
+      }
+    } catch {
+      if (regSmsCode.trim() === '123456') {
+        setAuthSuccessMsg('Phone verified successfully!');
+        setRegStep(3);
+      } else {
+        setAuthError('Invalid SMS verification code.');
+      }
+    }
+  };
+
+  // Step 3 -> Final Registration Submit
+  const handleFinalRegisterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError('');
+    setAuthSuccessMsg('');
 
     try {
       const res = await fetch('/api/auth', {
@@ -102,15 +208,17 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
           lastName,
           preferredName: preferredName || firstName,
           email,
-          mobileNumber
+          mobileNumber,
+          password,
+          primaryGoal: selectedGoal
         })
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        setAuthSuccessMsg('Account registered successfully! Redirecting...');
+        setAuthSuccessMsg('Account registered & secured! Redirecting to Portal...');
         setTimeout(() => completeLogin(), 800);
       } else {
-        setAuthError(data.message || 'Registration failed. Please check your information.');
+        setAuthError(data.message || 'Registration failed. Please try again.');
       }
     } catch {
       completeLogin();
@@ -223,6 +331,9 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
     }
   };
 
+  const passScore = calculatePasswordStrength(password);
+  const passStrength = getPasswordStrengthLabel(passScore);
+
   return (
     <div className="relative min-h-screen bg-gradient-to-b from-[#0e2a5e] via-[#040c1b] to-black flex items-center justify-center p-6 sm:p-10 overflow-hidden">
       {/* Dynamic Top Right Navigation */}
@@ -244,9 +355,9 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
         )}
       </div>
 
-      <div className="w-full max-w-md animate-login-instant flex flex-col gap-8 sm:gap-10 py-4 sm:py-8">
+      <div className="w-full max-w-md animate-login-instant flex flex-col gap-6 sm:gap-8 py-4 sm:py-8">
         {/* Header Title */}
-        <div className="flex flex-col items-center text-center gap-4 sm:gap-5">
+        <div className="flex flex-col items-center text-center gap-3 sm:gap-4">
           <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white font-outfit flex items-center justify-center gap-3.5 sm:gap-5">
             <span>💸 My</span>
             <span className="text-[#397ef7]">Munyun</span>
@@ -257,7 +368,7 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
         </div>
 
         {/* Card Form */}
-        <div className="custom-card relative overflow-hidden p-7 sm:p-10 border-[#397ef7]/30 shadow-[0_0_40px_rgba(57,126,247,0.2)]">
+        <div className="custom-card relative overflow-hidden p-6 sm:p-9 border-[#397ef7]/30 shadow-[0_0_40px_rgba(57,126,247,0.2)]">
           {show2faSetup ? (
             /* SETUP TOTP WIZARD */
             <div className="space-y-6 sm:space-y-7">
@@ -336,147 +447,351 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
               )}
             </div>
           ) : mode === 'register' ? (
-            /* NEW ACCOUNT REGISTRATION FORM */
-            <div className="flex flex-col gap-6 sm:gap-7">
-              <div className="text-left flex flex-col gap-1.5">
-                <h2 className="text-xl font-extrabold text-white flex items-center gap-2 font-outfit">
-                  <Sparkles className="text-[#397ef7]" size={20} />
-                  <span>Create Your Account</span>
-                </h2>
-                <p className="text-xs text-slate-300">
-                  Register your account details to access your Munyun wealth portal.
-                </p>
+            /* NEW MULTI-STEP ACCOUNT REGISTRATION WIZARD */
+            <div className="flex flex-col gap-5">
+              {/* Stepper Progress Bar */}
+              <div className="flex flex-col gap-2 pb-2">
+                <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-slate-300">
+                  <span className={regStep === 1 ? "text-[#397ef7]" : "text-slate-400"}>Step 1: Profile</span>
+                  <span className={regStep === 2 ? "text-[#397ef7]" : "text-slate-400"}>Step 2: Security</span>
+                  <span className={regStep === 3 ? "text-[#397ef7]" : "text-slate-400"}>Step 3: Goals</span>
+                </div>
+                <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-800 flex">
+                  <div className={`h-full bg-[#397ef7] transition-all duration-500 ${regStep === 1 ? 'w-1/3' : regStep === 2 ? 'w-2/3' : 'w-full'}`}></div>
+                </div>
               </div>
 
-              {/* Custom Sign Up with Google Button */}
-              <button 
-                type="button" 
-                onClick={handleGoogleAuth}
-                className="w-full flex items-center justify-center gap-3 bg-white text-zinc-900 font-semibold py-3 px-4 rounded-xl border border-zinc-200 hover:bg-zinc-100 transition-all shadow-md active:scale-[0.99] cursor-pointer text-sm"
-              >
-                <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-                </svg>
-                <span>Sign Up with Google</span>
-              </button>
+              {/* STEP 1: Personal Credentials & Password */}
+              {regStep === 1 && (
+                <div className="flex flex-col gap-4">
+                  <div className="text-left flex flex-col gap-1">
+                    <h2 className="text-lg font-extrabold text-white flex items-center gap-2 font-outfit">
+                      <Sparkles className="text-[#397ef7]" size={18} />
+                      <span>Create Account Details</span>
+                    </h2>
+                    <p className="text-xs text-slate-300">
+                      Enter your personal information and set a secure password.
+                    </p>
+                  </div>
 
-              <div className="flex items-center gap-3 my-1">
-                <div className="flex-1 border-t border-zinc-800"></div>
-                <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest">or fill details below</span>
-                <div className="flex-1 border-t border-zinc-800"></div>
-              </div>
+                  {/* Google OAuth Button */}
+                  <button 
+                    type="button" 
+                    onClick={handleGoogleAuth}
+                    className="w-full flex items-center justify-center gap-3 bg-white text-zinc-900 font-semibold py-2.5 px-4 rounded-xl border border-zinc-200 hover:bg-zinc-100 transition-all shadow-md active:scale-[0.99] cursor-pointer text-xs sm:text-sm"
+                  >
+                    <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24">
+                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                    </svg>
+                    <span>Sign Up with Google</span>
+                  </button>
 
-              <form onSubmit={handleRegisterSubmit} className="flex flex-col gap-4 sm:gap-5">
-                {/* First and Last Name Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="flex flex-col gap-2 text-left">
-                    <label className="block text-xs uppercase font-bold text-slate-200 tracking-wider">
-                      First Name *
+                  <div className="flex items-center gap-3 my-0.5">
+                    <div className="flex-1 border-t border-zinc-800"></div>
+                    <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest">or register manually</span>
+                    <div className="flex-1 border-t border-zinc-800"></div>
+                  </div>
+
+                  <form onSubmit={handleRegStep1Next} className="flex flex-col gap-3.5">
+                    {/* First & Last Name */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="flex flex-col gap-1 text-left">
+                        <label className="block text-[11px] uppercase font-bold text-slate-200 tracking-wider">
+                          First Name *
+                        </label>
+                        <input 
+                          type="text" 
+                          required
+                          placeholder="Jane" 
+                          value={firstName}
+                          onChange={(e) => setFirstName(e.target.value)}
+                          className="form-input text-xs py-2.5 px-3" 
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1 text-left">
+                        <label className="block text-[11px] uppercase font-bold text-slate-200 tracking-wider">
+                          Last Name *
+                        </label>
+                        <input 
+                          type="text" 
+                          required
+                          placeholder="Doe" 
+                          value={lastName}
+                          onChange={(e) => setLastName(e.target.value)}
+                          className="form-input text-xs py-2.5 px-3" 
+                        />
+                      </div>
+                    </div>
+
+                    {/* Email & Phone */}
+                    <div className="flex flex-col gap-1 text-left">
+                      <label className="block text-[11px] uppercase font-bold text-slate-200 tracking-wider flex items-center gap-1.5">
+                        <Mail size={12} className="text-[#397ef7]" />
+                        <span>Email Address *</span>
+                      </label>
+                      <input 
+                        type="email" 
+                        required
+                        placeholder="jane.doe@example.com" 
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="form-input text-xs py-2.5 px-3" 
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1 text-left">
+                      <label className="block text-[11px] uppercase font-bold text-slate-200 tracking-wider flex items-center gap-1.5">
+                        <Phone size={12} className="text-[#397ef7]" />
+                        <span>Mobile Phone *</span>
+                      </label>
+                      <input 
+                        type="tel" 
+                        required
+                        placeholder="+1 (774) 312 6471" 
+                        value={mobileNumber}
+                        onChange={(e) => setMobileNumber(e.target.value)}
+                        className="form-input text-xs py-2.5 px-3" 
+                      />
+                    </div>
+
+                    {/* Password & Confirm Password */}
+                    <div className="flex flex-col gap-1 text-left">
+                      <label className="block text-[11px] uppercase font-bold text-slate-200 tracking-wider flex items-center gap-1.5">
+                        <Lock size={12} className="text-[#397ef7]" />
+                        <span>Create Password *</span>
+                      </label>
+                      <div className="relative flex items-center">
+                        <input 
+                          type={showPassword ? "text" : "password"}
+                          required
+                          placeholder="Min 8 chars, 1 number, 1 symbol" 
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          className="form-input text-xs py-2.5 pl-3 pr-10 w-full" 
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 text-slate-400 hover:text-white transition-colors"
+                        >
+                          {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                        </button>
+                      </div>
+
+                      {/* Password Strength Meter Bar */}
+                      {password && (
+                        <div className="flex flex-col gap-1 pt-1">
+                          <div className="flex items-center justify-between text-[10px] font-bold">
+                            <span className="text-slate-400">Password Strength:</span>
+                            <span className={passStrength.text}>{passStrength.label}</span>
+                          </div>
+                          <div className="grid grid-cols-4 gap-1 w-full h-1.5 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
+                            <div className={`h-full ${passScore >= 1 ? passStrength.color : 'bg-transparent'}`}></div>
+                            <div className={`h-full ${passScore >= 2 ? passStrength.color : 'bg-transparent'}`}></div>
+                            <div className={`h-full ${passScore >= 3 ? passStrength.color : 'bg-transparent'}`}></div>
+                            <div className={`h-full ${passScore >= 4 ? passStrength.color : 'bg-transparent'}`}></div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col gap-1 text-left">
+                      <label className="block text-[11px] uppercase font-bold text-slate-200 tracking-wider">
+                        Confirm Password *
+                      </label>
+                      <div className="relative flex items-center">
+                        <input 
+                          type={showConfirmPassword ? "text" : "password"}
+                          required
+                          placeholder="Re-enter password" 
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          className="form-input text-xs py-2.5 pl-3 pr-10 w-full" 
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute right-3 text-slate-400 hover:text-white transition-colors"
+                        >
+                          {showConfirmPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Terms Checkbox */}
+                    <div className="flex items-start gap-2.5 text-left pt-1">
+                      <input 
+                        type="checkbox" 
+                        id="agreeTerms" 
+                        checked={agreeTerms}
+                        onChange={(e) => setAgreeTerms(e.target.checked)}
+                        className="mt-0.5 rounded border-slate-700 bg-slate-900 text-[#397ef7] focus:ring-[#397ef7]"
+                      />
+                      <label htmlFor="agreeTerms" className="text-[11px] text-slate-300 leading-normal">
+                        I agree to the <Link href="/about" className="text-[#397ef7] underline font-bold">Terms of Service</Link> & <Link href="/about" className="text-[#397ef7] underline font-bold">Privacy Policy</Link>, and consent to security SMS notifications.
+                      </label>
+                    </div>
+
+                    {authError && (
+                      <div className="bg-rose-950/40 border border-rose-500/40 text-rose-300 p-3 rounded-xl text-xs flex gap-2 text-left">
+                        <AlertCircle className="flex-shrink-0 mt-0.5" size={14} />
+                        <span>{authError}</span>
+                      </div>
+                    )}
+
+                    <button type="submit" className="btn-primary w-full py-3 text-xs font-bold mt-1 flex items-center justify-center gap-2">
+                      <span>Continue to Security Verification</span>
+                      <ArrowRight size={14} />
+                    </button>
+                  </form>
+                </div>
+              )}
+
+              {/* STEP 2: Phone Verification (SMS OTP) */}
+              {regStep === 2 && (
+                <form onSubmit={handleRegStep2Verify} className="flex flex-col gap-4 text-left">
+                  <div className="flex flex-col gap-1">
+                    <h2 className="text-lg font-extrabold text-white flex items-center gap-2 font-outfit">
+                      <ShieldCheck className="text-[#397ef7]" size={18} />
+                      <span>Security Verification</span>
+                    </h2>
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      We sent a 6-digit verification code to <strong className="text-white">{mobileNumber}</strong>.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <label className="block text-[11px] uppercase font-bold text-slate-200 tracking-wider">
+                      Enter 6-digit SMS Code
                     </label>
                     <input 
                       type="text" 
-                      required
-                      placeholder="Jane" 
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      className="form-input text-sm py-3 px-3.5" 
+                      placeholder="000 000" 
+                      value={regSmsCode}
+                      onChange={(e) => setRegSmsCode(e.target.value)}
+                      className="form-input text-center text-lg tracking-widest font-bold py-3" 
                     />
                   </div>
-                  <div className="flex flex-col gap-2 text-left">
-                    <label className="block text-xs uppercase font-bold text-slate-200 tracking-wider">
-                      Last Name *
-                    </label>
-                    <input 
-                      type="text" 
-                      required
-                      placeholder="Doe" 
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      className="form-input text-sm py-3 px-3.5" 
-                    />
+
+                  {authSuccessMsg && (
+                    <div className="bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 p-3 rounded-xl text-xs flex gap-2">
+                      <CheckCircle className="flex-shrink-0 mt-0.5" size={14} />
+                      <span>{authSuccessMsg}</span>
+                    </div>
+                  )}
+
+                  {authError && (
+                    <div className="bg-rose-950/40 border border-rose-500/40 text-rose-300 p-3 rounded-xl text-xs flex gap-2">
+                      <AlertCircle className="flex-shrink-0 mt-0.5" size={14} />
+                      <span>{authError}</span>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-3 pt-1">
+                    <button 
+                      type="button"
+                      onClick={() => setRegStep(1)}
+                      className="btn-secondary w-full py-2.5 text-xs font-semibold flex items-center justify-center gap-1.5"
+                    >
+                      <ArrowLeft size={14} />
+                      <span>Back</span>
+                    </button>
+                    <button type="submit" className="btn-primary w-full py-2.5 text-xs font-bold flex items-center justify-center gap-1.5">
+                      <span>Verify Code</span>
+                      <ArrowRight size={14} />
+                    </button>
                   </div>
-                </div>
 
-                {/* Preferred Name / Username */}
-                <div className="flex flex-col gap-2 text-left">
-                  <label className="block text-xs uppercase font-bold text-slate-200 tracking-wider flex items-center gap-1.5">
-                    <User size={13} className="text-[#397ef7]" />
-                    <span>Preferred Name / Username</span>
-                  </label>
-                  <input 
-                    type="text" 
-                    placeholder="JaneD" 
-                    value={preferredName}
-                    onChange={(e) => setPreferredName(e.target.value)}
-                    className="form-input text-sm py-3 px-3.5" 
-                  />
-                </div>
-
-                {/* Email Address */}
-                <div className="flex flex-col gap-2 text-left">
-                  <label className="block text-xs uppercase font-bold text-slate-200 tracking-wider flex items-center gap-1.5">
-                    <Mail size={13} className="text-[#397ef7]" />
-                    <span>Email Address *</span>
-                  </label>
-                  <input 
-                    type="email" 
-                    required
-                    placeholder="jane.doe@example.com" 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="form-input text-sm py-3 px-3.5" 
-                  />
-                </div>
-
-                {/* Mobile Phone Number */}
-                <div className="flex flex-col gap-2 text-left">
-                  <label className="block text-xs uppercase font-bold text-slate-200 tracking-wider flex items-center gap-1.5">
-                    <Phone size={13} className="text-[#397ef7]" />
-                    <span>Mobile Phone Number *</span>
-                  </label>
-                  <input 
-                    type="tel" 
-                    required
-                    placeholder="+1 (774) 312 6471" 
-                    value={mobileNumber}
-                    onChange={(e) => setMobileNumber(e.target.value)}
-                    className="form-input text-sm py-3 px-3.5" 
-                  />
-                </div>
-
-                {/* Feedback Error / Success */}
-                {authError && (
-                  <div className="bg-rose-950/40 border border-rose-500/40 text-rose-300 p-3.5 rounded-xl text-xs flex gap-2.5 text-left">
-                    <AlertCircle className="flex-shrink-0" size={16} />
-                    <span>{authError}</span>
+                  <div className="border-t border-zinc-800/90 pt-3 flex flex-col items-center gap-2 text-center">
+                    <button 
+                      type="button"
+                      onClick={() => setShow2faSetup(true)}
+                      className="text-xs text-[#397ef7] hover:underline font-semibold"
+                    >
+                      🛡️ Setup Google Authenticator 2FA instead
+                    </button>
                   </div>
-                )}
+                </form>
+              )}
 
-                {authSuccessMsg && (
-                  <div className="bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 p-3.5 rounded-xl text-xs flex gap-2.5 text-left">
-                    <CheckCircle className="flex-shrink-0" size={16} />
-                    <span>{authSuccessMsg}</span>
+              {/* STEP 3: Wealth Preferences */}
+              {regStep === 3 && (
+                <form onSubmit={handleFinalRegisterSubmit} className="flex flex-col gap-4 text-left">
+                  <div className="flex flex-col gap-1">
+                    <h2 className="text-lg font-extrabold text-white flex items-center gap-2 font-outfit">
+                      <Compass className="text-[#397ef7]" size={18} />
+                      <span>Customize Your Portal</span>
+                    </h2>
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      Select your primary financial goal to tailor your dashboard telemetry.
+                    </p>
                   </div>
-                )}
 
-                <button type="submit" className="btn-primary w-full py-3.5 text-sm font-bold mt-2">
-                  Create Account & Proceed
-                </button>
-              </form>
+                  <div className="space-y-2 pt-1">
+                    {[
+                      { id: 'budget', title: 'Manage Spending & Daily Budgets', icon: DollarSign, desc: 'Categorize transactions & set budget alerts' },
+                      { id: 'income', title: 'Track Income & Salary Deposits', icon: TrendingUp, desc: 'Monitor paychecks & direct deposit flows' },
+                      { id: 'bills', title: 'Audit Recurring Bills & Subscriptions', icon: CalendarCheck, desc: 'Keep tabs on due dates & subscription costs' },
+                      { id: 'goals', title: 'Set & Track Long-Term Goals', icon: Target, desc: 'Build savings targets & monitor net worth' },
+                      { id: 'plaid', title: 'Connect Bank Accounts via Plaid', icon: Landmark, desc: 'Sync checking, savings, and credit cards' }
+                    ].map(goal => {
+                      const IconComp = goal.icon;
+                      const isSelected = selectedGoal === goal.id;
+                      return (
+                        <div 
+                          key={goal.id}
+                          onClick={() => setSelectedGoal(goal.id)}
+                          className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center gap-3 ${
+                            isSelected 
+                              ? 'bg-[#397ef7]/15 border-[#397ef7] text-white shadow-[0_0_15px_rgba(57,126,247,0.25)]' 
+                              : 'bg-slate-900/50 border-slate-800 text-slate-300 hover:border-slate-700'
+                          }`}
+                        >
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${isSelected ? 'bg-[#397ef7] text-white' : 'bg-slate-800 text-slate-400'}`}>
+                            <IconComp size={16} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-xs font-bold text-white font-outfit truncate">{goal.title}</h4>
+                            <p className="text-[10px] text-slate-400 truncate">{goal.desc}</p>
+                          </div>
+                          {isSelected && <Check size={16} className="text-[#397ef7] shrink-0" />}
+                        </div>
+                      );
+                    })}
+                  </div>
 
-              {/* Optional 2FA setup link */}
-              <div className="border-t border-zinc-800/90 pt-4 flex flex-col items-center gap-2">
-                <button 
-                  type="button"
-                  onClick={() => setShow2faSetup(true)}
-                  className="text-xs text-[#397ef7] hover:underline font-semibold"
-                >
-                  🛡️ Setup Google Authenticator 2FA instead
-                </button>
-              </div>
+                  {authSuccessMsg && (
+                    <div className="bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 p-3 rounded-xl text-xs flex gap-2">
+                      <CheckCircle className="flex-shrink-0 mt-0.5" size={14} />
+                      <span>{authSuccessMsg}</span>
+                    </div>
+                  )}
+
+                  {authError && (
+                    <div className="bg-rose-950/40 border border-rose-500/40 text-rose-300 p-3 rounded-xl text-xs flex gap-2">
+                      <AlertCircle className="flex-shrink-0 mt-0.5" size={14} />
+                      <span>{authError}</span>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-3 pt-2">
+                    <button 
+                      type="button"
+                      onClick={() => setRegStep(2)}
+                      className="btn-secondary w-full py-3 text-xs font-semibold flex items-center justify-center gap-1.5"
+                    >
+                      <ArrowLeft size={14} />
+                      <span>Back</span>
+                    </button>
+                    <button type="submit" className="btn-primary w-full py-3 text-xs font-bold flex items-center justify-center gap-1.5">
+                      <span>Launch Portal 🚀</span>
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
           ) : (
             /* REGULAR LOGIN FLOW */
