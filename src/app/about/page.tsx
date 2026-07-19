@@ -64,6 +64,28 @@ export default function AboutPage() {
               <p className="text-xs text-slate-300 leading-relaxed">Custom monthly budget caps, subscription renewal alerts, and net worth milestones.</p>
             </div>
           </div>
+        </div>
+
+        {/* Creator's Story Quote Section */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-950 via-[#0e2a5e]/50 to-slate-950 border border-[#397ef7]/40 p-6 sm:p-8 shadow-[0_0_40px_rgba(57,126,247,0.15)] text-left space-y-4">
+          <div className="flex items-center gap-3 border-b border-slate-800/80 pb-3">
+            <span className="text-3xl sm:text-4xl text-[#397ef7] font-serif leading-none">&ldquo;</span>
+            <div className="space-y-0.5">
+              <h3 className="text-xs uppercase font-extrabold tracking-widest text-[#397ef7]">
+                A Message From The Creator
+              </h3>
+              <p className="text-sm font-bold text-white font-outfit">
+                Essien, Idong I. <span className="text-slate-400 font-normal text-xs">(@idongcodes on most social media platforms)</span>
+              </p>
+            </div>
+          </div>
+
+          <blockquote className="text-xs sm:text-sm text-slate-200 leading-relaxed font-sans italic border-l-2 border-[#397ef7] pl-4 py-1 space-y-2">
+            <p>
+              &ldquo;I have struggled with money and financial issues for all of my adult life. Dealing with the IRS, the state, educational loans, standard bills, and credit lines I never finished paying back—it was all too much. I knew I needed to do something, but sitting down to work it all out and doing the accounting to fully understand my spending habits, where my money goes, how much is coming in, how to grow it, and how much to invest or save was always a struggle for me. I knew I needed a push, but if I couldn&apos;t bother to do it on my own and I refused to pay for help, what were my options? So, I decided, with the help of Google&apos;s Antigravity, to build a tool that could help me. It started off as an idea for a private web app for myself, but then I thought, &apos;Bruh, this could be a perfect digital asset to help others who are like me, and if it scales, it can become a source of income.&apos; Regardless, I started it to help me manage my own money, and it just grew from there.&rdquo;
+            </p>
+          </blockquote>
+        </div>
 
           {/* Action Button Banner */}
           <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 bg-[#397ef7]/10 border border-[#397ef7]/30 p-5 rounded-2xl">
