@@ -87,6 +87,86 @@ export default function AboutPage() {
           </blockquote>
         </div>
 
+        {/* Support & Donations Card */}
+        <div className="custom-card p-6 sm:p-8 border-emerald-500/40 bg-gradient-to-r from-emerald-950/30 via-slate-950 to-emerald-950/30 shadow-[0_0_40px_rgba(16,185,129,0.15)] text-left space-y-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-emerald-500/20 pb-4">
+            <div className="space-y-1">
+              <span className="text-xs uppercase font-extrabold tracking-widest text-emerald-400 flex items-center gap-1.5">
+                <span>☕ Support My Munyun</span>
+              </span>
+              <h3 className="text-lg font-bold text-white font-outfit">
+                Help Us Keep My Munyun 100% Free For Everyone
+              </h3>
+            </div>
+            <span className="text-xs bg-emerald-500/20 text-emerald-300 font-semibold px-3 py-1 rounded-full border border-emerald-500/30">
+              Community Supported 💚
+            </span>
+          </div>
+
+          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+            My Munyun was built to empower everyone to master their financial future without subscription paywalls. If this tool has helped you track your money, cut unwanted subscriptions, or gain financial peace of mind, consider supporting ongoing development with a tip!
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+            {/* Cash App */}
+            <a
+              href="https://cash.app/$idongcodes"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-between p-3.5 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/50 border border-emerald-500/40 text-emerald-300 hover:text-white transition-all shadow-md group cursor-pointer"
+            >
+              <div className="flex items-center gap-2.5">
+                <span className="w-8 h-8 rounded-lg bg-emerald-500 text-slate-950 font-extrabold text-sm flex items-center justify-center font-outfit shadow-sm">
+                  $
+                </span>
+                <div className="text-left">
+                  <span className="text-xs font-bold block text-white">Cash App</span>
+                  <span className="text-[11px] text-emerald-400 font-mono">$idongcodes</span>
+                </div>
+              </div>
+              <span className="text-xs group-hover:translate-x-1 transition-transform">→</span>
+            </a>
+
+            {/* Venmo */}
+            <a
+              href="https://venmo.com/idongcodes"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-between p-3.5 rounded-xl bg-sky-950/40 hover:bg-sky-900/50 border border-sky-500/40 text-sky-300 hover:text-white transition-all shadow-md group cursor-pointer"
+            >
+              <div className="flex items-center gap-2.5">
+                <span className="w-8 h-8 rounded-lg bg-sky-500 text-slate-950 font-extrabold text-sm flex items-center justify-center font-outfit shadow-sm">
+                  V
+                </span>
+                <div className="text-left">
+                  <span className="text-xs font-bold block text-white">Venmo</span>
+                  <span className="text-[11px] text-sky-400 font-mono">@idongcodes</span>
+                </div>
+              </div>
+              <span className="text-xs group-hover:translate-x-1 transition-transform">→</span>
+            </a>
+
+            {/* PayPal */}
+            <a
+              href="https://paypal.me/idongcodes"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-between p-3.5 rounded-xl bg-blue-950/40 hover:bg-blue-900/50 border border-blue-500/40 text-blue-300 hover:text-white transition-all shadow-md group cursor-pointer"
+            >
+              <div className="flex items-center gap-2.5">
+                <span className="w-8 h-8 rounded-lg bg-blue-500 text-slate-950 font-extrabold text-sm flex items-center justify-center font-outfit shadow-sm">
+                  P
+                </span>
+                <div className="text-left">
+                  <span className="text-xs font-bold block text-white">PayPal</span>
+                  <span className="text-[11px] text-blue-400 font-mono">@idongcodes</span>
+                </div>
+              </div>
+              <span className="text-xs group-hover:translate-x-1 transition-transform">→</span>
+            </a>
+          </div>
+        </div>
+
           {/* Action Button Banner */}
           <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 bg-[#397ef7]/10 border border-[#397ef7]/30 p-5 rounded-2xl">
             <div className="text-left space-y-1">
