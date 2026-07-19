@@ -88,19 +88,19 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-[#0e2a5e] via-[#040c1b] to-black text-white flex flex-col items-center overflow-x-hidden pb-16">
       {/* Top Full-Width Hero Image Banner */}
-      <div className="w-full relative overflow-hidden bg-gradient-to-b from-slate-950 via-[#0e2a5e]/80 to-[#0e2a5e] border-b border-[#397ef7]/30 shadow-[0_10px_40px_rgba(57,126,247,0.25)] animate-login-instant">
-        <div className="w-full h-64 sm:h-80 md:h-[420px] lg:h-[500px] relative flex items-center justify-center">
+      <div className="w-full relative overflow-hidden bg-black border-b border-[#397ef7]/30 shadow-[0_10px_40px_rgba(0,0,0,0.9)] animate-login-instant">
+        <div className="w-full h-64 sm:h-80 md:h-[420px] lg:h-[500px] relative flex items-center justify-center bg-black">
           <Image
             src="/image_4f7c657f.png"
             alt="My Munyun Hero Banner"
             fill
             priority
             sizes="100vw"
-            className="object-cover object-center w-full h-full opacity-90 transition-transform duration-700 hover:scale-105"
+            className="object-cover object-center w-full h-full opacity-95 transition-transform duration-700 hover:scale-105"
           />
-          {/* Gradient overlays for seamless blend & visual contrast */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0e2a5e] via-transparent to-slate-950/60 pointer-events-none"></div>
-          <div className="absolute inset-0 bg-gradient-to-r from-[#0e2a5e]/40 via-transparent to-[#0e2a5e]/40 pointer-events-none"></div>
+          {/* Gradient overlays for seamless blend into page background */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0e2a5e] via-transparent to-black/60 pointer-events-none"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-black/40 pointer-events-none"></div>
         </div>
       </div>
 
