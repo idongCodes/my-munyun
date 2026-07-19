@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const CLI_MESSAGES = [
   "initializing quantum_munyun_engine.sh ... [OK]",
@@ -84,8 +85,26 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#0e2a5e] via-[#040c1b] to-black text-white p-6 sm:p-12 flex flex-col justify-between items-center overflow-hidden">
-      <div className="max-w-4xl mx-auto w-full space-y-12 my-auto py-12 text-center animate-login-instant">
+    <main className="min-h-screen bg-gradient-to-b from-[#0e2a5e] via-[#040c1b] to-black text-white flex flex-col items-center overflow-x-hidden pb-12">
+      {/* Top Full-Width Hero Image Banner */}
+      <div className="w-full relative overflow-hidden bg-gradient-to-b from-slate-950 via-[#0e2a5e]/80 to-[#0e2a5e] border-b border-[#397ef7]/30 shadow-[0_10px_40px_rgba(57,126,247,0.25)] animate-login-instant">
+        <div className="w-full h-64 sm:h-80 md:h-[420px] lg:h-[500px] relative flex items-center justify-center">
+          <Image
+            src="/image_4f7c657f.png"
+            alt="My Munyun Hero Banner"
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover object-center w-full h-full opacity-90 transition-transform duration-700 hover:scale-105"
+          />
+          {/* Gradient overlays for seamless blend & visual contrast */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0e2a5e] via-transparent to-slate-950/60 pointer-events-none"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0e2a5e]/40 via-transparent to-[#0e2a5e]/40 pointer-events-none"></div>
+        </div>
+      </div>
+
+      {/* Main Content Area Below Full-Width Banner */}
+      <div className="max-w-4xl mx-auto w-full px-6 py-10 sm:py-14 space-y-10 text-center animate-login-instant">
         {/* Main Title Heading */}
         <div className="flex flex-col items-center justify-center gap-4">
           <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white font-outfit leading-tight flex items-center justify-center gap-3 sm:gap-4 flex-wrap">
@@ -97,21 +116,18 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Home Page Hero Container */}
-        <section className="custom-card p-10 sm:p-16 border-[#397ef7]/30 shadow-[0_0_40px_rgba(57,126,247,0.2)] max-w-2xl mx-auto flex flex-col items-center justify-center gap-6">
-          <div className="w-20 h-20 rounded-full bg-[#397ef7]/10 flex items-center justify-center text-[#397ef7] text-3xl font-bold border border-[#397ef7]/30">
-            🏛️
-          </div>
-          <div className="space-y-2">
-            <h2 className="text-2xl font-extrabold text-white font-outfit">
+        {/* Home Page Content Card */}
+        <section className="custom-card p-8 sm:p-12 border-[#397ef7]/30 shadow-[0_0_50px_rgba(57,126,247,0.25)] max-w-2xl mx-auto flex flex-col items-center justify-center gap-6">
+          <div className="space-y-3 text-center max-w-xl">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-white font-outfit tracking-tight">
               Welcome to My Munyun
             </h2>
-            <p className="text-sm text-slate-300 max-w-md leading-relaxed">
+            <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
               Your personal wealth aggregation portal. Manage your accounts, monitor budgets, and securely track transactions in one place.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full pt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-md pt-2">
             <Link 
               href="/login" 
               className="btn-primary py-3.5 px-6 text-sm font-bold text-center block"
