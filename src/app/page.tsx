@@ -118,11 +118,11 @@ export default function Home() {
         </div>
 
         {/* App Intro Paragraph */}
-        <div className="max-w-2xl mx-auto space-y-4 text-center">
+        <div className="max-w-2xl mx-auto space-y-3 text-left">
           <p className="text-sm sm:text-base text-slate-200 leading-relaxed font-normal">
-            My Munyun is an all-in-one digital wealth advisor built to give you complete clarity and control over your financial life. By securely aggregating your bank accounts, income streams, recurring bills, and daily spending, it turns complex money management into effortless insights. Whether you&apos;re tracking direct deposits or setting ambitious savings milestones, My Munyun empowers you to reach your financial potential with confidence.
+            My Munyun is your all-in-one digital wealth advisor, designed to simplify money management by aggregating your bank accounts, income streams, recurring bills, and spending into effortless real-time insights.
           </p>
-          <div>
+          <div className="pt-1">
             <Link 
               href="/about" 
               className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-[#397ef7] hover:text-[#5b96ff] transition-colors bg-[#397ef7]/10 hover:bg-[#397ef7]/20 border border-[#397ef7]/30 px-5 py-2.5 rounded-full shadow-sm"
