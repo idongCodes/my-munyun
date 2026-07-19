@@ -32,6 +32,6 @@ describe('Home Page Component (page.tsx)', () => {
     });
 
     expect(screen.getByText(/💸 My/i)).toBeDefined();
-    expect(screen.getByText(/Welcome to My Munyun/i)).toBeDefined();
+    expect(screen.getByText(/Monthly Income & Deposits/i)).toBeDefined();
   });
 });
