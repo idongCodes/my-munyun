@@ -102,8 +102,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: "Invalid verification code. Please try again." });
     }
 
+    if (action === "check_duplicate") {
+      const { email, mobileNumber } = body;
+      const registered = await getCredential("user_registered");
+      if (registered === "true") {
+        const storedEmail = await getCredential("user_email");
+        const storedMobile = await getCredential("user_mobileNumber");
+        if (email && storedEmail && storedEmail.toLowerCase() === email.trim().toLowerCase()) {
+          return NextResponse.json({ exists: true, field: "email", message: "An account with this email already exists." });
+        }
+        if (mobileNumber && storedMobile && storedMobile.trim() === mobileNumber.trim()) {
+          return NextResponse.json({ exists: true, field: "mobileNumber", message: "An account with this phone number already exists." });
+        }
+      }
+      return NextResponse.json({ exists: false });
+    }
+
     if (action === "register_user") {
-      const { firstName, lastName, preferredName, email, mobileNumber, isGoogle } = body;
+      const { firstName, lastName, preferredName, email, mobileNumber, isGoogle, primaryGoal } = body;
       if (!isGoogle && (!firstName || !lastName || !email || !mobileNumber)) {
         return NextResponse.json({ success: false, message: "Please fill out all required fields." });
       }
@@ -112,6 +128,7 @@ export async function POST(request: Request) {
       await setCredential("user_preferredName", preferredName || firstName || "User");
       await setCredential("user_email", email || "");
       await setCredential("user_mobileNumber", mobileNumber || "");
+      await setCredential("user_primaryGoal", primaryGoal || "budget");
       await setCredential("user_registered", "true");
       return NextResponse.json({ success: true, message: "Registration successful!" });
     }
