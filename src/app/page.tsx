@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { TrendingUp, DollarSign, CalendarCheck, Landmark, Target } from 'lucide-react';
 
 const CLI_MESSAGES = [
   "initializing quantum_munyun_engine.sh ... [OK]",
@@ -85,7 +86,7 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#0e2a5e] via-[#040c1b] to-black text-white flex flex-col items-center overflow-x-hidden pb-12">
+    <main className="min-h-screen bg-gradient-to-b from-[#0e2a5e] via-[#040c1b] to-black text-white flex flex-col items-center overflow-x-hidden pb-16">
       {/* Top Full-Width Hero Image Banner */}
       <div className="w-full relative overflow-hidden bg-gradient-to-b from-slate-950 via-[#0e2a5e]/80 to-[#0e2a5e] border-b border-[#397ef7]/30 shadow-[0_10px_40px_rgba(57,126,247,0.25)] animate-login-instant">
         <div className="w-full h-64 sm:h-80 md:h-[420px] lg:h-[500px] relative flex items-center justify-center">
@@ -104,7 +105,7 @@ export default function Home() {
       </div>
 
       {/* Main Content Area Below Full-Width Banner */}
-      <div className="max-w-4xl mx-auto w-full px-6 py-10 sm:py-14 space-y-10 text-center animate-login-instant">
+      <div className="max-w-5xl mx-auto w-full px-6 py-10 sm:py-14 space-y-12 text-center animate-login-instant">
         {/* Main Title Heading */}
         <div className="flex flex-col items-center justify-center gap-4">
           <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white font-outfit leading-tight flex items-center justify-center gap-3 sm:gap-4 flex-wrap">
@@ -140,6 +141,59 @@ export default function Home() {
             >
               Register an Account
             </Link>
+          </div>
+        </section>
+
+        {/* Untitled Features Grid Section */}
+        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 max-w-5xl mx-auto w-full pt-4">
+          <div className="custom-card p-6 border-[#397ef7]/30 flex flex-col items-start text-left gap-3 group hover:border-[#397ef7]/60 transition-all duration-300">
+            <div className="w-12 h-12 rounded-xl bg-[#397ef7]/15 border border-[#397ef7]/30 flex items-center justify-center text-[#397ef7] group-hover:scale-110 transition-transform">
+              <TrendingUp className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-bold text-white font-outfit">Monthly Income & Deposits</h3>
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+              Track salary paychecks, direct deposits, and incoming cash flows automatically in one unified feed.
+            </p>
+          </div>
+
+          <div className="custom-card p-6 border-[#397ef7]/30 flex flex-col items-start text-left gap-3 group hover:border-[#397ef7]/60 transition-all duration-300">
+            <div className="w-12 h-12 rounded-xl bg-[#397ef7]/15 border border-[#397ef7]/30 flex items-center justify-center text-[#397ef7] group-hover:scale-110 transition-transform">
+              <DollarSign className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-bold text-white font-outfit">Spending & Budgeting</h3>
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+              Categorize expenses, monitor daily spending habits, and get real-time alerts when near budget limits.
+            </p>
+          </div>
+
+          <div className="custom-card p-6 border-[#397ef7]/30 flex flex-col items-start text-left gap-3 group hover:border-[#397ef7]/60 transition-all duration-300">
+            <div className="w-12 h-12 rounded-xl bg-[#397ef7]/15 border border-[#397ef7]/30 flex items-center justify-center text-[#397ef7] group-hover:scale-110 transition-transform">
+              <CalendarCheck className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-bold text-white font-outfit">Recurring Bills & Subscriptions</h3>
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+              Keep tabs on recurring bill due dates, active subscriptions, and upcoming automated payments.
+            </p>
+          </div>
+
+          <div className="custom-card p-6 border-[#397ef7]/30 flex flex-col items-start text-left gap-3 group hover:border-[#397ef7]/60 transition-all duration-300">
+            <div className="w-12 h-12 rounded-xl bg-[#397ef7]/15 border border-[#397ef7]/30 flex items-center justify-center text-[#397ef7] group-hover:scale-110 transition-transform">
+              <Landmark className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-bold text-white font-outfit">Connect Bank Accounts</h3>
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+              Securely link multiple financial institutions, checking, savings, and credit cards via bank integrations.
+            </p>
+          </div>
+
+          <div className="custom-card p-6 border-[#397ef7]/30 flex flex-col items-start text-left gap-3 group hover:border-[#397ef7]/60 transition-all duration-300 md:col-span-2 lg:col-span-1">
+            <div className="w-12 h-12 rounded-xl bg-[#397ef7]/15 border border-[#397ef7]/30 flex items-center justify-center text-[#397ef7] group-hover:scale-110 transition-transform">
+              <Target className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-bold text-white font-outfit">Set & Track Goals</h3>
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+              Define custom financial goals, monitor savings milestones, and track your long-term wealth progression.
+            </p>
           </div>
         </section>
       </div>
