@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Lock, AlertCircle, CheckCircle, User, Mail, Phone, Sparkles, Eye, EyeOff, ShieldCheck, ArrowRight, ArrowLeft, Check, Compass, Target, Landmark, TrendingUp, CalendarCheck } from 'lucide-react';
+import { Lock, AlertCircle, CheckCircle, User, Mail, Phone, Sparkles, Eye, EyeOff, ShieldCheck, ArrowRight, ArrowLeft, Check, Compass, Target, Landmark, TrendingUp, CalendarCheck, DollarSign } from 'lucide-react';
 import QRCode from 'qrcode';
 
 interface AuthContainerProps {
