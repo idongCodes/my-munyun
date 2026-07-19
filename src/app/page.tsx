@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { TrendingUp, DollarSign, CalendarCheck, Landmark, Target, ChevronDown } from 'lucide-react';
+import { TrendingUp, DollarSign, CalendarCheck, Landmark, Target, ChevronDown, ChevronsRight } from 'lucide-react';
 
 const CLI_MESSAGES = [
   "initializing quantum_munyun_engine.sh ... [OK]",
@@ -40,6 +40,13 @@ export default function Home() {
   const [showSplash, setShowSplash] = useState(true);
   const [cliIndex, setCliIndex] = useState(0);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  const handleSkipSplash = () => {
+    setShowSplash(false);
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('munyun_splash_active', 'false');
+    }
+  };
 
   const toggleFaq = (index: number) => {
     setOpenFaq(openFaq === index ? null : index);
@@ -79,7 +86,15 @@ export default function Home() {
 
   if (showSplash) {
     return (
-      <div className="fixed inset-0 h-screen min-h-screen w-screen bg-gradient-to-b from-[#0e2a5e] via-[#040c1b] to-black flex flex-col justify-center items-center z-50 animate-splash px-4 py-6 sm:p-12">
+      <div className="fixed inset-0 h-screen min-h-screen w-screen bg-gradient-to-b from-[#0e2a5e] via-[#040c1b] to-black flex flex-col justify-center items-center z-50 animate-splash px-4 py-6 sm:p-12 relative">
+        {/* Top Right Skip Button */}
+        <button
+          onClick={handleSkipSplash}
+          className="absolute top-4 right-4 sm:top-6 sm:right-8 z-50 flex items-center gap-1.5 text-xs sm:text-sm font-bold text-slate-300 hover:text-white bg-slate-900/70 hover:bg-[#397ef7]/20 px-4 py-2 rounded-full border border-[#397ef7]/35 backdrop-blur-md shadow-lg transition-all hover:scale-105 cursor-pointer active:scale-95 group"
+        >
+          <span>tap here skip</span>
+          <ChevronsRight className="w-4 h-4 text-[#397ef7] group-hover:translate-x-0.5 transition-transform" />
+        </button>
         <div className="flex flex-col items-center justify-center gap-3 sm:gap-4 text-center max-w-lg mx-auto w-full h-full px-4 sm:px-6 py-2">
           {/* Main Title Heading */}
           <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white font-outfit leading-tight px-4 py-1 mb-1 flex items-center justify-center gap-3 sm:gap-4 flex-wrap">
