@@ -389,25 +389,6 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
 
   return (
     <div className="relative min-h-screen bg-gradient-to-b from-[#0e2a5e] via-[#040c1b] to-black flex items-center justify-center p-6 sm:p-10 overflow-hidden">
-      {/* Dynamic Top Right Navigation */}
-      <div className="absolute top-4 right-4 sm:top-6 sm:right-8 z-50 flex items-center text-xs sm:text-sm font-semibold tracking-wider">
-        {mode === 'login' ? (
-          <Link 
-            href="/register" 
-            className="text-slate-300 hover:text-white transition-colors cursor-pointer font-bold bg-slate-900/60 px-4 py-2 rounded-full border border-[#397ef7]/30 backdrop-blur-md shadow-md"
-          >
-            Register an Account
-          </Link>
-        ) : (
-          <Link 
-            href="/login" 
-            className="text-slate-300 hover:text-white transition-colors cursor-pointer font-bold bg-slate-900/60 px-4 py-2 rounded-full border border-[#397ef7]/30 backdrop-blur-md shadow-md"
-          >
-            Log in to an Account
-          </Link>
-        )}
-      </div>
-
       <div className="w-full max-w-md animate-login-instant flex flex-col gap-6 sm:gap-8 py-4 sm:py-8">
         {/* Header Title */}
         <div className="flex flex-col items-center text-center gap-3 sm:gap-4">
