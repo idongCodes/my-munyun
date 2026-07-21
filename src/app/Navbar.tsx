@@ -1,13 +1,16 @@
 "use client";
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { LogOut } from 'lucide-react';
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [isSplashActive, setIsSplashActive] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -15,12 +18,23 @@ export default function Navbar() {
       if (typeof window !== 'undefined') {
         const splashActive = sessionStorage.getItem('munyun_splash_active') === 'true';
         setIsSplashActive(splashActive);
+
+        const loggedIn = sessionStorage.getItem('munyun_logged_in') === 'true';
+        setIsLoggedIn(loggedIn);
       }
     };
     checkState();
     const interval = setInterval(checkState, 200);
     return () => clearInterval(interval);
   }, []);
+
+  const handleLogout = () => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('munyun_logged_in');
+      sessionStorage.removeItem('munyun_login_time');
+      router.push('/login');
+    }
+  };
 
   if (!mounted) return null;
 
@@ -29,16 +43,17 @@ export default function Navbar() {
     return null;
   }
 
-  // Dynamic top-right link controls based on route
+  // Dynamic top-right link controls based on session state
   const getAuthLink = () => {
-    if (pathname === '/dashboard' || pathname.startsWith('/dashboard/')) {
+    if (isLoggedIn) {
       return (
-        <Link 
-          href="/dashboard/settings" 
-          className="text-xs font-bold text-slate-300 hover:text-white bg-slate-900/70 hover:bg-slate-800 px-4 py-2 rounded-full border border-slate-700/60 hover:border-[#397ef7]/60 transition-all cursor-pointer shadow-md"
+        <button 
+          onClick={handleLogout}
+          className="text-xs font-bold text-slate-300 hover:text-white bg-slate-900/70 hover:bg-red-500/10 px-4 py-2 rounded-full border border-slate-700/60 hover:border-red-500/40 transition-all cursor-pointer shadow-md flex items-center gap-1.5"
         >
-          Settings
-        </Link>
+          <LogOut size={13} className="text-red-400" />
+          <span>Logout</span>
+        </button>
       );
     }
 

@@ -300,12 +300,6 @@ export default function DashboardPage() {
     }
   };
 
-  const handleLogout = () => {
-    sessionStorage.removeItem('munyun_logged_in');
-    sessionStorage.removeItem('munyun_login_time');
-    router.push('/login');
-  };
-
   if (isAuthenticated === null) {
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center space-y-4">
@@ -383,13 +377,6 @@ export default function DashboardPage() {
                 </button>
               </>
             )}
-            <button
-              onClick={handleLogout}
-              className="btn-secondary py-2.5 px-4 text-xs font-bold w-full sm:w-auto flex items-center justify-center gap-2 border-red-500/25 hover:border-red-500/60 hover:bg-red-500/10"
-            >
-              <LogOut size={14} className="text-red-400" />
-              <span>Logout</span>
-            </button>
           </div>
         </header>
 
