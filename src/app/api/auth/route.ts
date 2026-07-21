@@ -63,7 +63,8 @@ export async function POST(request: Request) {
       }
 
       const cleanedNum = cleanPhoneNumber(phone);
-      if (!ALLOWED_PHONE_NUMBERS.includes(cleanedNum)) {
+      const allowAll = process.env.ALLOWED_PHONE_NUMBERS === '*';
+      if (!allowAll && !ALLOWED_PHONE_NUMBERS.includes(cleanedNum)) {
         return NextResponse.json({ success: false, message: `Phone number ${cleanedNum} not authorized.` });
       }
 

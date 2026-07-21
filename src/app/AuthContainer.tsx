@@ -158,7 +158,7 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
     setRegStep(2);
   };
 
-  // Step 2 -> Step 3 Validation
+  // Step 2 -> Final Registration Submit
   const handleRegStep2Verify = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError('');
@@ -169,6 +169,34 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
       return;
     }
 
+    const registerUser = async () => {
+      try {
+        const res = await fetch('/api/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'register_user',
+            firstName,
+            lastName,
+            preferredName: preferredName || firstName,
+            email,
+            mobileNumber,
+            password,
+            primaryGoal: selectedGoal
+          })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          setAuthSuccessMsg('Account registered & secured! Redirecting to Portal...');
+          setTimeout(() => completeLogin(), 800);
+        } else {
+          setAuthError(data.message || 'Registration failed. Please try again.');
+        }
+      } catch {
+        setAuthError('Failed to complete registration database entry.');
+      }
+    };
+
     try {
       const res = await fetch('/api/auth', {
         method: 'POST',
@@ -178,50 +206,17 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
       const data = await res.json();
       if (res.ok && data.success) {
         setAuthSuccessMsg('Phone verified successfully!');
-        setRegStep(3);
+        await registerUser();
       } else {
         setAuthError(data.message || 'Invalid SMS verification code.');
       }
     } catch {
       if (regSmsCode.trim() === '123456') {
         setAuthSuccessMsg('Phone verified successfully!');
-        setRegStep(3);
+        await registerUser();
       } else {
         setAuthError('Invalid SMS verification code.');
       }
-    }
-  };
-
-  // Step 3 -> Final Registration Submit
-  const handleFinalRegisterSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setAuthError('');
-    setAuthSuccessMsg('');
-
-    try {
-      const res = await fetch('/api/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'register_user',
-          firstName,
-          lastName,
-          preferredName: preferredName || firstName,
-          email,
-          mobileNumber,
-          password,
-          primaryGoal: selectedGoal
-        })
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setAuthSuccessMsg('Account registered & secured! Redirecting to Portal...');
-        setTimeout(() => completeLogin(), 800);
-      } else {
-        setAuthError(data.message || 'Registration failed. Please try again.');
-      }
-    } catch {
-      completeLogin();
     }
   };
 
@@ -487,11 +482,10 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
               <div className="flex flex-col gap-2 pb-2">
                 <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-slate-300">
                   <span className={regStep === 1 ? "text-[#397ef7]" : "text-slate-400"}>Step 1: Profile</span>
-                  <span className={regStep === 2 ? "text-[#397ef7]" : "text-slate-400"}>Step 2: Security</span>
-                  <span className={regStep === 3 ? "text-[#397ef7]" : "text-slate-400"}>Step 3: Goals</span>
+                  <span className={regStep === 2 ? "text-[#397ef7]" : "text-slate-400"}>Step 2: Verification</span>
                 </div>
                 <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-800 flex">
-                  <div className={`h-full bg-[#397ef7] transition-all duration-500 ${regStep === 1 ? 'w-1/3' : regStep === 2 ? 'w-2/3' : 'w-full'}`}></div>
+                  <div className={`h-full bg-[#397ef7] transition-all duration-500 ${regStep === 1 ? 'w-1/2' : 'w-full'}`}></div>
                 </div>
               </div>
 
@@ -770,105 +764,6 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
                 </form>
               )}
 
-              {/* STEP 3: Wealth Preferences */}
-              {regStep === 3 && (
-                <form onSubmit={handleFinalRegisterSubmit} className="flex flex-col gap-4 text-left">
-                  <div className="flex flex-col gap-1">
-                    <h2 className="text-lg font-extrabold text-white flex items-center gap-2 font-outfit">
-                      <Compass className="text-[#397ef7]" size={18} />
-                      <span>Customize Your Portal</span>
-                    </h2>
-                    <p className="text-xs text-slate-300 leading-relaxed">
-                      Select your primary financial goal to tailor your dashboard telemetry.
-                    </p>
-                  </div>
-
-                  <div className="space-y-2 pt-1">
-                    {[
-                      { id: 'budget', title: 'Manage Spending & Daily Budgets', icon: DollarSign, desc: 'Categorize transactions & set budget alerts' },
-                      { id: 'income', title: 'Track Income & Salary Deposits', icon: TrendingUp, desc: 'Monitor paychecks & direct deposit flows' },
-                      { id: 'bills', title: 'Audit Recurring Bills & Subscriptions', icon: CalendarCheck, desc: 'Keep tabs on due dates & subscription costs' },
-                      { id: 'goals', title: 'Set & Track Long-Term Goals', icon: Target, desc: 'Build savings targets & monitor net worth' },
-                      { id: 'plaid', title: 'Connect Bank Accounts via Plaid', icon: Landmark, desc: 'Sync checking, savings, and credit cards' }
-                    ].map(goal => {
-                      const IconComp = goal.icon;
-                      const isSelected = selectedGoal === goal.id;
-                      return (
-                        <div 
-                          key={goal.id}
-                          onClick={() => setSelectedGoal(goal.id)}
-                          className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center gap-3 ${
-                            isSelected 
-                              ? 'bg-[#397ef7]/15 border-[#397ef7] text-white shadow-[0_0_15px_rgba(57,126,247,0.25)]' 
-                              : 'bg-slate-900/50 border-slate-800 text-slate-300 hover:border-slate-700'
-                          }`}
-                        >
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${isSelected ? 'bg-[#397ef7] text-white' : 'bg-slate-800 text-slate-400'}`}>
-                            <IconComp size={16} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="text-xs font-bold text-white font-outfit truncate">{goal.title}</h4>
-                            <p className="text-[10px] text-slate-400 truncate">{goal.desc}</p>
-                          </div>
-                          {isSelected && <Check size={16} className="text-[#397ef7] shrink-0" />}
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {selectedGoal === 'plaid' && (
-                    <div className="p-3.5 bg-[#397ef7]/10 border border-[#397ef7]/40 rounded-xl space-y-2.5 text-center">
-                      <p className="text-xs text-slate-200">
-                        Connect your bank via Plaid to auto-populate balances and transactions right now.
-                      </p>
-                      {plaidConnected ? (
-                        <div className="bg-emerald-950/60 border border-emerald-500/50 text-emerald-300 py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2">
-                          <CheckCircle size={14} />
-                          <span>Bank Account Connected via Plaid!</span>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={handleConnectPlaidStep3}
-                          disabled={plaidConnecting}
-                          className="w-full bg-[#397ef7] hover:bg-[#286ae6] text-white font-bold text-xs py-2.5 px-4 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                        >
-                          <Landmark size={14} />
-                          <span>{plaidConnecting ? 'Connecting to Plaid...' : 'Link Bank Account via Plaid'}</span>
-                        </button>
-                      )}
-                    </div>
-                  )}
-
-                  {authSuccessMsg && (
-                    <div className="bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 p-3 rounded-xl text-xs flex gap-2">
-                      <CheckCircle className="flex-shrink-0 mt-0.5" size={14} />
-                      <span>{authSuccessMsg}</span>
-                    </div>
-                  )}
-
-                  {authError && (
-                    <div className="bg-rose-950/40 border border-rose-500/40 text-rose-300 p-3 rounded-xl text-xs flex gap-2">
-                      <AlertCircle className="flex-shrink-0 mt-0.5" size={14} />
-                      <span>{authError}</span>
-                    </div>
-                  )}
-
-                  <div className="grid grid-cols-2 gap-3 pt-2">
-                    <button 
-                      type="button"
-                      onClick={() => setRegStep(2)}
-                      className="btn-secondary w-full py-3 text-xs font-semibold flex items-center justify-center gap-1.5"
-                    >
-                      <ArrowLeft size={14} />
-                      <span>Back</span>
-                    </button>
-                    <button type="submit" className="btn-primary w-full py-3 text-xs font-bold flex items-center justify-center gap-1.5">
-                      <span>Launch Portal 🚀</span>
-                    </button>
-                  </div>
-                </form>
-              )}
             </div>
           ) : (
             /* REGULAR LOGIN FLOW */
