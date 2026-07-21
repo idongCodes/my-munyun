@@ -53,7 +53,7 @@ export default function BottomNav() {
   ];
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 animate-login-instant select-none pointer-events-auto">
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-login-instant select-none pointer-events-auto">
       <nav className="flex items-center justify-center gap-5 sm:gap-7 bg-slate-950/75 border border-slate-800/80 backdrop-blur-md px-6 py-2.5 rounded-full shadow-[0_15px_35px_-5px_rgba(0,0,0,0.85),0_0_25px_rgba(57,126,247,0.15)] hover:border-[#397ef7]/50 transition-all duration-300">
         {navItems.map((item) => {
           const Icon = item.icon;
