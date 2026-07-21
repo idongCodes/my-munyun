@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getCredential, setCredential } from '@/lib/db';
+import { getCredential, setCredential, wipeDatabase } from '@/lib/db';
 import { generateSecret, generateURI, verifySync } from 'otplib';
 import { cleanPhoneNumber, sendTwilioSms } from '@/lib/twilio';
 
@@ -120,7 +120,7 @@ export async function POST(request: Request) {
     }
 
     if (action === "register_user") {
-      const { firstName, lastName, preferredName, email, mobileNumber, isGoogle, primaryGoal } = body;
+      const { firstName, lastName, preferredName, email, mobileNumber, isGoogle, primaryGoal, password } = body;
       if (!isGoogle && (!firstName || !lastName || !email || !mobileNumber)) {
         return NextResponse.json({ success: false, message: "Please fill out all required fields." });
       }
@@ -130,8 +130,58 @@ export async function POST(request: Request) {
       await setCredential("user_email", email || "");
       await setCredential("user_mobileNumber", mobileNumber || "");
       await setCredential("user_primaryGoal", primaryGoal || "budget");
+      await setCredential("user_password", password || "");
       await setCredential("user_registered", "true");
       return NextResponse.json({ success: true, message: "Registration successful!" });
+    }
+
+    if (action === "update_settings") {
+      const { firstName, lastName, preferredName, email, mobileNumber, password } = body;
+
+      const currentFirstName = await getCredential("user_firstName") || "";
+      const currentLastName = await getCredential("user_lastName") || "";
+
+      // Check if first or last name is changing
+      const nameChanged = (firstName !== undefined && firstName.trim() !== currentFirstName.trim()) || 
+                          (lastName !== undefined && lastName.trim() !== currentLastName.trim());
+
+      if (nameChanged) {
+        const nameLastUpdatedAt = await getCredential("user_name_last_updated_at");
+        if (nameLastUpdatedAt) {
+          const timeDiff = Date.now() - new Date(nameLastUpdatedAt).getTime();
+          const seventyTwoHours = 72 * 60 * 60 * 1000;
+          if (timeDiff < seventyTwoHours) {
+            const hoursLeft = Math.ceil((seventyTwoHours - timeDiff) / (60 * 60 * 1000));
+            return NextResponse.json({ 
+              success: false, 
+              message: `First or Last name can only be changed once every 72 hours. Please try again in ${hoursLeft} hours.` 
+            });
+          }
+        }
+      }
+
+      // Apply modifications
+      if (firstName !== undefined) await setCredential("user_firstName", firstName.trim());
+      if (lastName !== undefined) await setCredential("user_lastName", lastName.trim());
+      if (nameChanged) {
+        await setCredential("user_name_last_updated_at", new Date().toISOString());
+      }
+
+      if (preferredName !== undefined) await setCredential("user_preferredName", preferredName.trim());
+      if (email !== undefined) await setCredential("user_email", email.trim());
+      if (mobileNumber !== undefined) {
+        await setCredential("user_mobileNumber", mobileNumber.trim());
+      }
+      if (password !== undefined && password.trim() !== "") {
+        await setCredential("user_password", password);
+      }
+
+      return NextResponse.json({ success: true, message: "Settings saved successfully!" });
+    }
+
+    if (action === "delete_account") {
+      await wipeDatabase();
+      return NextResponse.json({ success: true, message: "Account successfully wiped." });
     }
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
