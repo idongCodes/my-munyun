@@ -56,8 +56,8 @@ export async function GET(request: Request) {
     await setCredential('user_email', googleUser.email);
     await setCredential('user_registered', 'true');
 
-    // Redirect user to home dashboard
-    return NextResponse.redirect(`${origin}/?google_auth=success`);
+    // Redirect user to login page which processes client-side session tokens
+    return NextResponse.redirect(`${origin}/login?google_auth=success`);
   } catch (error) {
     console.error('Google OAuth Callback Error:', error);
     return NextResponse.redirect(`${origin}/login?error=google_auth_failed`);

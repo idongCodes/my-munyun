@@ -16,11 +16,18 @@ export async function GET() {
   const boaLinked = await getCredential('access_token_boa') !== null;
   const cashappLinked = await getCredential('access_token_cashapp') !== null;
 
+  const preferredName = await getCredential('user_preferredName') || 'User';
+  const primaryGoal = await getCredential('user_primaryGoal') || 'budget';
+  const email = await getCredential('user_email') || 'user@example.com';
+
   return NextResponse.json({
     is_plaid_configured: isPlaidConfigured,
     use_mock_data: activeUseMock,
     plaid_env: process.env.PLAID_ENV || 'sandbox',
-    boa_linked: boaLinked || activeUseMock,
-    cashapp_linked: cashappLinked || activeUseMock,
+    boa_linked: boaLinked,
+    cashapp_linked: cashappLinked,
+    preferred_name: preferredName,
+    primary_goal: primaryGoal,
+    email: email,
   });
 }
