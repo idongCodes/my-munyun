@@ -240,7 +240,7 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
       if (res.ok && data.success) {
         completeLogin();
       } else {
-        setAuthError(data.message || 'Invalid Authenticator code.');
+        setAuthError(data.error || data.message || 'Invalid Authenticator code.');
       }
     } catch (err: any) {
       console.error('[TOTP Login] Exception:', err);
@@ -277,7 +277,7 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
           setAuthSuccessMsg(`SMS verification code sent to ${phone}.`);
         }
       } else {
-        setAuthError(data.message || 'Failed to send SMS.');
+        setAuthError(data.error || data.message || 'Failed to send SMS.');
       }
     } catch (err: any) {
       console.error('[SMS Request] Exception:', err);
@@ -302,7 +302,7 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
       if (res.ok && data.success) {
         completeLogin();
       } else {
-        setAuthError(data.message || 'Invalid SMS verification code.');
+        setAuthError(data.error || data.message || 'Invalid SMS verification code.');
       }
     } catch (err: any) {
       console.error('[SMS Verify] Exception:', err);
