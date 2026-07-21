@@ -81,11 +81,11 @@ export async function initDb() {
 // Credentials
 export async function getCredential(key: string): Promise<string | null> {
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('credentials').select('value').eq('key', key).single();
-    if (error && error.code !== 'PGRST116') {
+    const { data, error } = await supabase.from('credentials').select('value').eq('key', key);
+    if (error) {
       console.error(`Supabase error reading credential "${key}":`, error);
     }
-    return data ? data.value : null;
+    return data && data.length > 0 ? data[data.length - 1].value : null;
   }
 
   const db = await getDb();
