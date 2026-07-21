@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getCredential, initDb } from '@/lib/db';
 import { isPlaidConfigured } from '@/lib/plaid';
+import { isSupabaseConfigured } from '@/lib/supabase';
 
 export async function GET() {
   await initDb();
