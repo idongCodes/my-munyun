@@ -37,5 +37,6 @@ export async function GET() {
     email: email,
     mobile_number: mobileNumber,
     name_last_updated_at: nameLastUpdatedAt,
+    supabase_active: isSupabaseConfigured(),
   });
 }
