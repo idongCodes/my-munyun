@@ -81,7 +81,10 @@ export async function initDb() {
 // Credentials
 export async function getCredential(key: string): Promise<string | null> {
   if (isSupabaseConfigured() && supabase) {
-    const { data } = await supabase.from('credentials').select('value').eq('key', key).single();
+    const { data, error } = await supabase.from('credentials').select('value').eq('key', key).single();
+    if (error && error.code !== 'PGRST116') {
+      console.error(`Supabase error reading credential "${key}":`, error);
+    }
     return data ? data.value : null;
   }
 
@@ -92,7 +95,11 @@ export async function getCredential(key: string): Promise<string | null> {
 
 export async function setCredential(key: string, value: string): Promise<void> {
   if (isSupabaseConfigured() && supabase) {
-    await supabase.from('credentials').upsert({ key, value });
+    const { error } = await supabase.from('credentials').upsert({ key, value });
+    if (error) {
+      console.error(`Supabase error writing credential "${key}":`, error);
+      throw new Error(`Supabase write failed: ${error.message} (${error.code})`);
+    }
     return;
   }
 
@@ -102,7 +109,11 @@ export async function setCredential(key: string, value: string): Promise<void> {
 
 export async function deleteCredential(key: string): Promise<void> {
   if (isSupabaseConfigured() && supabase) {
-    await supabase.from('credentials').delete().eq('key', key);
+    const { error } = await supabase.from('credentials').delete().eq('key', key);
+    if (error) {
+      console.error(`Supabase error deleting credential "${key}":`, error);
+      throw new Error(`Supabase delete failed: ${error.message}`);
+    }
     return;
   }
 
