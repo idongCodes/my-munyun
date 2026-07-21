@@ -228,22 +228,26 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
     e.preventDefault();
     setAuthError('');
     try {
+      console.log('[TOTP Login] Submitting code:', totpCode);
       const res = await fetch('/api/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'totp_login', code: totpCode })
       });
+      console.log('[TOTP Login] Status:', res.status, res.statusText);
       const data = await res.json();
+      console.log('[TOTP Login] Data:', data);
       if (res.ok && data.success) {
         completeLogin();
       } else {
         setAuthError(data.message || 'Invalid Authenticator code.');
       }
-    } catch {
+    } catch (err: any) {
+      console.error('[TOTP Login] Exception:', err);
       if (totpCode.trim().length === 6) {
         completeLogin();
       } else {
-        setAuthError('Invalid Authenticator code.');
+        setAuthError(err.message || 'Invalid Authenticator code.');
       }
     }
   };
@@ -256,12 +260,15 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
       return;
     }
     try {
+      console.log('[SMS Request] Sending code to:', phone);
       const res = await fetch('/api/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'sms_send', phone })
       });
+      console.log('[SMS Request] Status:', res.status, res.statusText);
       const data = await res.json();
+      console.log('[SMS Request] Data:', data);
       if (res.ok && data.success) {
         setSmsSent(true);
         if (data.demoMode) {
@@ -272,7 +279,8 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
       } else {
         setAuthError(data.message || 'Failed to send SMS.');
       }
-    } catch {
+    } catch (err: any) {
+      console.error('[SMS Request] Exception:', err);
       setSmsSent(true);
       setAuthSuccessMsg(`SMS verification code sent to ${phone}. (Demo code: 123456)`);
     }
@@ -282,22 +290,26 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
     e.preventDefault();
     setAuthError('');
     try {
+      console.log('[SMS Verify] Submitting code:', smsCode);
       const res = await fetch('/api/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'sms_verify', code: smsCode })
       });
+      console.log('[SMS Verify] Status:', res.status, res.statusText);
       const data = await res.json();
+      console.log('[SMS Verify] Data:', data);
       if (res.ok && data.success) {
         completeLogin();
       } else {
         setAuthError(data.message || 'Invalid SMS verification code.');
       }
-    } catch {
+    } catch (err: any) {
+      console.error('[SMS Verify] Exception:', err);
       if (smsCode.trim() === '123456') {
         completeLogin();
       } else {
-        setAuthError('Invalid SMS verification code.');
+        setAuthError(err.message || 'Invalid SMS verification code.');
       }
     }
   };
