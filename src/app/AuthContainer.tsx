@@ -107,7 +107,7 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
   const completeLogin = () => {
     sessionStorage.setItem('munyun_logged_in', 'true');
     sessionStorage.setItem('munyun_login_time', new Date().toISOString());
-    router.push('/');
+    router.push('/dashboard');
   };
 
   // Step 1 -> Step 2 Validation

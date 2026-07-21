@@ -18,7 +18,7 @@ export async function POST(request: Request) {
 
     if (activeUseMock) {
       await setCredential(`access_token_${institution}`, `mock_access_token_${institution}`);
-      await generateMockData();
+      await generateMockData(institution);
       return NextResponse.json({ status: "success" });
     }
 
