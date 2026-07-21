@@ -41,6 +41,13 @@ export default function Home() {
   const [cliIndex, setCliIndex] = useState(0);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
+  const skipSplash = () => {
+    setShowSplash(false);
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('munyun_splash_active', 'false');
+    }
+  };
+
   const toggleFaq = (index: number) => {
     setOpenFaq(openFaq === index ? null : index);
   };
@@ -79,7 +86,16 @@ export default function Home() {
 
   if (showSplash) {
     return (
-      <div className="fixed inset-0 h-screen min-h-screen w-screen bg-gradient-to-b from-[#0e2a5e] via-[#040c1b] to-black flex flex-col justify-center items-center z-50 animate-splash px-4 py-6 sm:p-12">
+      <div 
+        onClick={skipSplash}
+        className="fixed inset-0 h-screen min-h-screen w-screen bg-gradient-to-b from-[#0e2a5e] via-[#040c1b] to-black flex flex-col justify-center items-center z-50 animate-splash px-4 py-6 sm:p-12 cursor-pointer select-none"
+      >
+        {/* Skip Indicator */}
+        <div className="absolute top-4 right-4 sm:top-6 sm:right-6 text-xs text-slate-400 hover:text-white font-semibold font-sans tracking-wide transition-colors flex items-center gap-1 z-10">
+          <span>Tap to skip</span>
+          <span className="text-sm font-bold">➔</span>
+        </div>
+        
         <div className="flex flex-col items-center justify-center gap-3 sm:gap-4 text-center max-w-lg mx-auto w-full h-full px-4 sm:px-6 py-2">
           {/* Main Title Heading */}
           <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white font-outfit leading-tight px-4 py-1 mb-1 flex items-center justify-center gap-3 sm:gap-4 flex-wrap">
