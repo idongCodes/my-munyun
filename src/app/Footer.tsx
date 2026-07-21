@@ -33,7 +33,7 @@ export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="w-full border-t border-slate-800/80 bg-slate-950/90 backdrop-blur-md py-6 px-4 text-center text-xs text-slate-400 font-sans tracking-wide z-40">
+    <footer className="w-full border-t border-slate-800/80 bg-slate-950/90 backdrop-blur-md pt-6 pb-24 px-4 text-center text-xs text-slate-400 font-sans tracking-wide z-10">
       <div className="max-w-7xl mx-auto flex flex-col items-center gap-4 px-4">
         {/* Support / Donation Handles Row */}
         <div className="flex flex-wrap items-center justify-center gap-2 text-[11px] font-semibold text-slate-300 py-1">
