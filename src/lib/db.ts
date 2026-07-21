@@ -265,3 +265,18 @@ export async function deleteBudget(category: string) {
   const db = await getDb();
   await db.run('DELETE FROM budgets WHERE category = ?', category);
 }
+
+export async function wipeDatabase() {
+  if (isSupabaseConfigured() && supabase) {
+    await supabase.from('transactions').delete().neq('id', '');
+    await supabase.from('accounts').delete().neq('id', '');
+    await supabase.from('budgets').delete().neq('category', '');
+    await supabase.from('credentials').delete().neq('key', '');
+    return;
+  }
+  const db = await getDb();
+  await db.run('DELETE FROM transactions');
+  await db.run('DELETE FROM accounts');
+  await db.run('DELETE FROM budgets');
+  await db.run('DELETE FROM credentials');
+}
