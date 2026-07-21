@@ -46,26 +46,14 @@ export default function Navbar() {
   // Dynamic top-right link controls based on session state
   const getAuthLink = () => {
     if (isLoggedIn) {
-      const showDashboardLink = pathname !== '/dashboard' && !pathname.startsWith('/dashboard/');
-      
       return (
-        <div className="flex items-center gap-3">
-          {showDashboardLink && (
-            <Link 
-              href="/dashboard"
-              className="text-xs font-bold text-[#397ef7] hover:text-white bg-[#397ef7]/10 hover:bg-[#397ef7]/20 px-4 py-2 rounded-full border border-[#397ef7]/30 hover:border-[#397ef7]/60 transition-all cursor-pointer shadow-md"
-            >
-              Dashboard
-            </Link>
-          )}
-          <button 
-            onClick={handleLogout}
-            className="text-xs font-bold text-slate-300 hover:text-white bg-slate-900/70 hover:bg-red-500/10 px-4 py-2 rounded-full border border-slate-700/60 hover:border-red-500/40 transition-all cursor-pointer shadow-md flex items-center gap-1.5"
-          >
-            <LogOut size={13} className="text-red-400" />
-            <span>Logout</span>
-          </button>
-        </div>
+        <button 
+          onClick={handleLogout}
+          className="text-xs font-bold text-slate-300 hover:text-white bg-slate-900/70 hover:bg-red-500/10 px-4 py-2 rounded-full border border-slate-700/60 hover:border-red-500/40 transition-all cursor-pointer shadow-md flex items-center gap-1.5"
+        >
+          <LogOut size={13} className="text-red-400" />
+          <span>Logout</span>
+        </button>
       );
     }
 
