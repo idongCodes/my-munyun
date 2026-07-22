@@ -29,7 +29,8 @@ export async function POST(request: Request) {
       user: {
         client_user_id: userId
       },
-      products: [Products.Transactions]
+      products: [Products.Transactions],
+      redirect_uri: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
     });
 
     return NextResponse.json({ link_token: response.data.link_token });
