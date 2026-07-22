@@ -293,6 +293,53 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, message: "Account successfully wiped." });
     }
 
+    if (action === "password_login") {
+      const { email, password } = body;
+      if (!email || !password) {
+        return NextResponse.json({ success: false, message: "Email and password are required." });
+      }
+
+      const user = await getUserByEmail(email);
+      if (!user || !user.password || user.password !== password) {
+        return NextResponse.json({ success: false, message: "Invalid email or password." });
+      }
+
+      await setSessionCookie(user.id);
+      return NextResponse.json({ success: true });
+    }
+
+    if (action === "unlink_google") {
+      const userId = await getSessionUserId();
+      if (!userId) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      const { email, password } = body;
+      const cleanEmail = (email || "").trim().toLowerCase();
+
+      if (!cleanEmail) {
+        return NextResponse.json({ success: false, message: "Email address is required to unlink Google." });
+      }
+      if (!password || password.trim().length < 4) {
+        return NextResponse.json({ success: false, message: "Please enter a valid password (at least 4 characters)." });
+      }
+
+      // Check duplicate email
+      const duplicateUser = await getUserByEmail(cleanEmail);
+      if (duplicateUser && duplicateUser.id !== userId) {
+        return NextResponse.json({ success: false, message: "This email address is already linked to another Munyun profile." });
+      }
+
+      // Update user credentials and remove google link
+      await updateUser(userId, {
+        email: cleanEmail,
+        password: password,
+        google_id: null
+      });
+
+      return NextResponse.json({ success: true, message: "Google account successfully unlinked." });
+    }
+
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   } catch (error: any) {
     console.error("Auth API Error:", error);

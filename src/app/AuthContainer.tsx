@@ -32,7 +32,7 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
   const [show2faSetup, setShow2faSetup] = useState(false);
 
   // Login form states
-  const [authMethod, setAuthMethod] = useState<'totp' | 'sms'>('totp');
+  const [authMethod, setAuthMethod] = useState<'totp' | 'sms' | 'password'>('totp');
   const [totpCode, setTotpCode] = useState('');
   const [phone, setPhone] = useState('');
   const [smsCode, setSmsCode] = useState('');
@@ -255,6 +255,30 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
       } else {
         setAuthError(err.message || 'Invalid Authenticator code.');
       }
+    }
+  };
+
+  const handlePasswordLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError('');
+    if (!email.trim() || !password.trim()) {
+      setAuthError('Please enter both email and password.');
+      return;
+    }
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'password_login', email, password })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        completeLogin();
+      } else {
+        setAuthError(data.message || 'Invalid email or password.');
+      }
+    } catch (err: any) {
+      setAuthError(err.message || 'Authentication request failed.');
     }
   };
 
@@ -825,6 +849,7 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
                 >
                   <option value="totp">Authenticator Code</option>
                   <option value="sms">SMS Verification</option>
+                  <option value="password">Email & Password</option>
                 </select>
               </div>
 
@@ -919,6 +944,41 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
                     </form>
                   )}
                 </div>
+              )}
+
+              {/* Flow 3: Email & Password */}
+              {authMethod === 'password' && (
+                <form onSubmit={handlePasswordLogin} className="space-y-5 sm:space-y-6">
+                  <div className="space-y-3">
+                    <label className="block text-xs uppercase font-bold text-slate-200 tracking-wider">
+                      Email Address
+                    </label>
+                    <input 
+                      type="email" 
+                      required
+                      placeholder="you@example.com" 
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="form-input py-3.5 px-4 text-xs" 
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    <label className="block text-xs uppercase font-bold text-slate-200 tracking-wider">
+                      Password
+                    </label>
+                    <input 
+                      type="password" 
+                      required
+                      placeholder="Enter password" 
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="form-input py-3.5 px-4 text-xs" 
+                    />
+                  </div>
+                  <button type="submit" className="btn-primary w-full py-3.5 text-sm font-bold">
+                    Unlock Portal
+                  </button>
+                </form>
               )}
 
               {/* Feedback messages */}
