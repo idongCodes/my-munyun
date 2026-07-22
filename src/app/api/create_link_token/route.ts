@@ -22,16 +22,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ link_token: "mock_link_token" });
     }
 
-    const response = await plaidClient.linkTokenCreate({
+    const redirectUri = process.env.PLAID_REDIRECT_URI;
+
+    const linkTokenParams: any = {
       client_name: "Munyun Finance",
       language: "en",
       country_codes: [CountryCode.Us],
       user: {
         client_user_id: userId
       },
-      products: [Products.Transactions],
-      redirect_uri: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-    });
+      products: [Products.Transactions]
+    };
+
+    if (redirectUri) {
+      linkTokenParams.redirect_uri = redirectUri;
+    }
+
+    const response = await plaidClient.linkTokenCreate(linkTokenParams);
 
     return NextResponse.json({ link_token: response.data.link_token });
   } catch (error: any) {
