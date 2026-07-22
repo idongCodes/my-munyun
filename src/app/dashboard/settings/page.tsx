@@ -252,7 +252,7 @@ export default function SettingsPage() {
           <div className="flex items-center gap-3">
             <span className="text-3xl">⚙️</span>
             <h1 className="text-2xl sm:text-3xl font-extrabold font-outfit tracking-tight">
-              Portal <span className="text-[#397ef7]">Settings</span>
+              Settings
             </h1>
           </div>
           <Link 
