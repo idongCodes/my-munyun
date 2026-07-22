@@ -25,7 +25,7 @@ describe('Plaid Link & Exchange API Routes', () => {
     const req = new Request('http://localhost/api/exchange_public_token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ public_token: 'mock_public_token', institution: 'Bank of America' })
+      body: JSON.stringify({ public_token: 'mock_public_token', institution: 'boa' })
     });
 
     const res = await exchangeTokenPOST(req);

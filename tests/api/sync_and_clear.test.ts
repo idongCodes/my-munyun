@@ -1,11 +1,12 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { POST as syncPOST } from '@/app/api/sync/route';
 import { POST as clearPOST } from '@/app/api/clear/route';
-import { initDb, getAccounts, getTransactions } from '@/lib/db';
+import { initDb, getAccounts, getTransactions, setCredential } from '@/lib/db';
 
 describe('Sync and Clear API Routes', () => {
   beforeEach(async () => {
     await initDb();
+    await setCredential('access_token_boa', 'mock_access_token_boa');
   });
 
   it('should trigger data sync and update records', async () => {

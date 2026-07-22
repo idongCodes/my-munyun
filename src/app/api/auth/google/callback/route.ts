@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { setCredential } from '@/lib/db';
+import { createUser, getUserByEmail } from '@/lib/db';
+import { setSessionCookie } from '@/lib/session';
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -49,12 +50,30 @@ export async function GET(request: Request) {
       }
     }
 
-    // Save registered user details to database
-    await setCredential('user_firstName', googleUser.firstName);
-    await setCredential('user_lastName', googleUser.lastName);
-    await setCredential('user_preferredName', googleUser.preferredName);
-    await setCredential('user_email', googleUser.email);
-    await setCredential('user_registered', 'true');
+    // Lookup user by email
+    const cleanEmail = googleUser.email.trim().toLowerCase();
+    let user = await getUserByEmail(cleanEmail);
+
+    if (!user) {
+      // Create new user for Google login
+      user = {
+        id: crypto.randomUUID(),
+        email: cleanEmail,
+        first_name: googleUser.firstName,
+        last_name: googleUser.lastName,
+        preferred_name: googleUser.preferredName,
+        mobile_number: '',
+        password: '',
+        totp_secret: null,
+        totp_enabled: false,
+        google_id: 'google_oauth_user',
+        avatar_url: null
+      };
+      await createUser(user);
+    }
+
+    // Authenticate user with server-side cookie
+    await setSessionCookie(user.id);
 
     // Redirect user to login page which processes client-side session tokens
     return NextResponse.redirect(`${origin}/login?google_auth=success`);

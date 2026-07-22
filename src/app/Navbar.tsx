@@ -28,8 +28,17 @@ export default function Navbar() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     if (typeof window !== 'undefined') {
+      try {
+        await fetch('/api/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'logout' })
+        });
+      } catch (err) {
+        console.error('Failed to call server logout:', err);
+      }
       sessionStorage.removeItem('munyun_logged_in');
       sessionStorage.removeItem('munyun_login_time');
       router.push('/login');

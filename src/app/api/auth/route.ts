@@ -1,7 +1,17 @@
 import { NextResponse } from 'next/server';
-import { getCredential, setCredential, wipeDatabase } from '@/lib/db';
+import { 
+  getCredential, 
+  setCredential, 
+  wipeDatabase, 
+  createUser, 
+  getUserById,
+  getUserByEmail, 
+  getUserByPhone, 
+  updateUser 
+} from '@/lib/db';
 import { generateSecret, generateURI, verifySync } from 'otplib';
 import { cleanPhoneNumber, sendTwilioSms } from '@/lib/twilio';
+import { setSessionCookie, clearSessionCookie, getSessionUserId } from '@/lib/session';
 
 export async function POST(request: Request) {
   try {
@@ -15,12 +25,33 @@ export async function POST(request: Request) {
       .map(n => cleanPhoneNumber(n.trim()))
       .filter(Boolean);
 
+    // Keep legacy passcode support for test compatibilities
     if (action === "passcode") {
       const { passcode } = body;
       if (passcode === APP_PASSWORD) {
+        // Find or create default user for passcode tests so they get a valid session
+        let defaultUser = await getUserByEmail("admin@example.com");
+        if (!defaultUser) {
+          defaultUser = {
+            id: "00000000-0000-0000-0000-000000000000",
+            email: "admin@example.com",
+            first_name: "Admin",
+            last_name: "User",
+            preferred_name: "Admin",
+            mobile_number: "",
+            password: APP_PASSWORD
+          };
+          await createUser(defaultUser);
+        }
+        await setSessionCookie(defaultUser.id);
         return NextResponse.json({ success: true });
       }
       return NextResponse.json({ success: false, message: "Incorrect passcode. Please try again." });
+    }
+
+    if (action === "logout") {
+      await clearSessionCookie();
+      return NextResponse.json({ success: true });
     }
 
     if (action === "totp_setup") {
@@ -44,13 +75,26 @@ export async function POST(request: Request) {
     }
 
     if (action === "totp_login") {
-      const { code } = body;
+      const { code, email } = body;
       const cleanCode = (code || "").replace(/\s/g, "");
-      if (!TOTP_SECRET) {
-        return NextResponse.json({ success: false, message: "TOTP is not configured. Use passcode login." });
+      if (!email) {
+        return NextResponse.json({ success: false, message: "Email is required." });
       }
-      const isValid = verifySync({ token: cleanCode, secret: TOTP_SECRET });
+      
+      const user = await getUserByEmail(email);
+      if (!user) {
+        return NextResponse.json({ success: false, message: "Invalid email or Authenticator code." });
+      }
+
+      // If user has a specific totp_secret, use it. Otherwise, fallback to global TOTP_SECRET for backwards compatibility
+      const secretToUse = user.totp_secret || TOTP_SECRET;
+      if (!secretToUse) {
+        return NextResponse.json({ success: false, message: "Authenticator 2FA is not set up for this user." });
+      }
+
+      const isValid = verifySync({ token: cleanCode, secret: secretToUse });
       if (isValid) {
+        await setSessionCookie(user.id);
         return NextResponse.json({ success: true });
       }
       return NextResponse.json({ success: false, message: "Invalid Authenticator code. Please check your app." });
@@ -68,10 +112,13 @@ export async function POST(request: Request) {
         return NextResponse.json({ success: false, message: `Phone number ${cleanedNum} not authorized.` });
       }
 
+      // Check if user exists by phone
+      const user = await getUserByPhone(cleanedNum);
+      const userId = user ? user.id : `temp_${cleanedNum}`;
+
       const code = String(Math.floor(100000 + Math.random() * 900000));
-      await setCredential("sms_code", code);
-      await setCredential("sms_phone", cleanedNum);
-      await setCredential("sms_expiry", String(Date.now() + 5 * 60 * 1000)); // 5 min expiry
+      await setCredential(userId, "sms_code", code);
+      await setCredential(userId, "sms_expiry", String(Date.now() + 5 * 60 * 1000)); // 5 min expiry
 
       const sent = await sendTwilioSms(cleanedNum, code);
       if (sent) {
@@ -82,11 +129,18 @@ export async function POST(request: Request) {
     }
 
     if (action === "sms_verify") {
-      const { code } = body;
+      const { code, phone } = body;
+      if (!phone) {
+        return NextResponse.json({ success: false, message: "Phone number is required." });
+      }
       const cleanCode = (code || "").replace(/\s/g, "");
+      const cleanedNum = cleanPhoneNumber(phone);
 
-      const storedCode = await getCredential("sms_code");
-      const storedExpiry = await getCredential("sms_expiry");
+      const user = await getUserByPhone(cleanedNum);
+      const userId = user ? user.id : `temp_${cleanedNum}`;
+
+      const storedCode = await getCredential(userId, "sms_code");
+      const storedExpiry = await getCredential(userId, "sms_expiry");
 
       if (!storedCode || !storedExpiry) {
         return NextResponse.json({ success: false, message: "No SMS code requested." });
@@ -97,6 +151,10 @@ export async function POST(request: Request) {
       }
 
       if (cleanCode === storedCode) {
+        if (user) {
+          // It's a login, set session cookie!
+          await setSessionCookie(user.id);
+        }
         return NextResponse.json({ success: true });
       }
 
@@ -105,14 +163,15 @@ export async function POST(request: Request) {
 
     if (action === "check_duplicate") {
       const { email, mobileNumber } = body;
-      const registered = await getCredential("user_registered");
-      if (registered === "true") {
-        const storedEmail = await getCredential("user_email");
-        const storedMobile = await getCredential("user_mobileNumber");
-        if (email && storedEmail && storedEmail.toLowerCase() === email.trim().toLowerCase()) {
+      if (email) {
+        const u = await getUserByEmail(email);
+        if (u) {
           return NextResponse.json({ exists: true, field: "email", message: "An account with this email already exists." });
         }
-        if (mobileNumber && storedMobile && storedMobile.trim() === mobileNumber.trim()) {
+      }
+      if (mobileNumber) {
+        const u = await getUserByPhone(mobileNumber);
+        if (u) {
           return NextResponse.json({ exists: true, field: "mobileNumber", message: "An account with this phone number already exists." });
         }
       }
@@ -120,33 +179,58 @@ export async function POST(request: Request) {
     }
 
     if (action === "register_user") {
-      const { firstName, lastName, preferredName, email, mobileNumber, isGoogle, primaryGoal, password } = body;
+      const { firstName, lastName, preferredName, email, mobileNumber, isGoogle, primaryGoal, password, totpSecret } = body;
       if (!isGoogle && (!firstName || !lastName || !email || !mobileNumber)) {
         return NextResponse.json({ success: false, message: "Please fill out all required fields." });
       }
-      await setCredential("user_firstName", firstName || "");
-      await setCredential("user_lastName", lastName || "");
-      await setCredential("user_preferredName", preferredName || firstName || "User");
-      await setCredential("user_email", email || "");
-      await setCredential("user_mobileNumber", mobileNumber || "");
-      await setCredential("user_primaryGoal", primaryGoal || "budget");
-      await setCredential("user_password", password || "");
-      await setCredential("user_registered", "true");
+
+      const cleanEmail = email.trim().toLowerCase();
+      const existingUser = await getUserByEmail(cleanEmail);
+      if (existingUser) {
+        return NextResponse.json({ success: false, message: "An account with this email already exists." });
+      }
+
+      const cleanPhone = cleanPhoneNumber(mobileNumber);
+      const newUser = {
+        id: crypto.randomUUID(),
+        email: cleanEmail,
+        first_name: firstName || "Google User",
+        last_name: lastName || "",
+        preferred_name: preferredName || firstName || "User",
+        mobile_number: cleanPhone,
+        password: password || "",
+        totp_secret: totpSecret || null,
+        totp_enabled: !!totpSecret,
+        google_id: isGoogle ? "google_placeholder_id" : null,
+        avatar_url: null
+      };
+
+      await createUser(newUser);
+      await setSessionCookie(newUser.id);
       return NextResponse.json({ success: true, message: "Registration successful!" });
     }
 
     if (action === "update_settings") {
-      const { firstName, lastName, preferredName, email, mobileNumber, password } = body;
+      const userId = await getSessionUserId();
+      if (!userId) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
 
-      const currentFirstName = await getCredential("user_firstName") || "";
-      const currentLastName = await getCredential("user_lastName") || "";
+      const { firstName, lastName, preferredName, email, mobileNumber, password } = body;
+      const user = await getUserById(userId);
+      if (!user) {
+        return NextResponse.json({ error: "User not found" }, { status: 404 });
+      }
+
+      const currentFirstName = user.first_name || "";
+      const currentLastName = user.last_name || "";
 
       // Check if first or last name is changing
       const nameChanged = (firstName !== undefined && firstName.trim() !== currentFirstName.trim()) || 
                           (lastName !== undefined && lastName.trim() !== currentLastName.trim());
 
       if (nameChanged) {
-        const nameLastUpdatedAt = await getCredential("user_name_last_updated_at");
+        const nameLastUpdatedAt = await getCredential(userId, "user_name_last_updated_at");
         if (nameLastUpdatedAt) {
           const timeDiff = Date.now() - new Date(nameLastUpdatedAt).getTime();
           const seventyTwoHours = 72 * 60 * 60 * 1000;
@@ -161,26 +245,33 @@ export async function POST(request: Request) {
       }
 
       // Apply modifications
-      if (firstName !== undefined) await setCredential("user_firstName", firstName.trim());
-      if (lastName !== undefined) await setCredential("user_lastName", lastName.trim());
-      if (nameChanged) {
-        await setCredential("user_name_last_updated_at", new Date().toISOString());
+      const userUpdates: any = {};
+      if (firstName !== undefined) userUpdates.first_name = firstName.trim();
+      if (lastName !== undefined) userUpdates.last_name = lastName.trim();
+      if (preferredName !== undefined) userUpdates.preferred_name = preferredName.trim();
+      if (email !== undefined) userUpdates.email = email.trim().toLowerCase();
+      if (mobileNumber !== undefined) userUpdates.mobile_number = cleanPhoneNumber(mobileNumber);
+      if (password !== undefined && password.trim() !== "") userUpdates.password = password;
+
+      if (Object.keys(userUpdates).length > 0) {
+        await updateUser(userId, userUpdates);
       }
 
-      if (preferredName !== undefined) await setCredential("user_preferredName", preferredName.trim());
-      if (email !== undefined) await setCredential("user_email", email.trim());
-      if (mobileNumber !== undefined) {
-        await setCredential("user_mobileNumber", mobileNumber.trim());
-      }
-      if (password !== undefined && password.trim() !== "") {
-        await setCredential("user_password", password);
+      if (nameChanged) {
+        await setCredential(userId, "user_name_last_updated_at", new Date().toISOString());
       }
 
       return NextResponse.json({ success: true, message: "Settings saved successfully!" });
     }
 
     if (action === "delete_account") {
-      await wipeDatabase();
+      const userId = await getSessionUserId();
+      if (!userId) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      await wipeDatabase(userId);
+      await clearSessionCookie();
       return NextResponse.json({ success: true, message: "Account successfully wiped." });
     }
 

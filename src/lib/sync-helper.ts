@@ -1,7 +1,7 @@
 import { plaidClient } from './plaid';
 import { saveAccounts, saveTransactions } from './db';
 
-export async function syncItemData(accessToken: string, institution: string) {
+export async function syncItemData(accessToken: string, institution: string, userId: string) {
   try {
     const instName = institution === 'boa' ? 'Bank of America' : 'Cash App';
 
@@ -20,7 +20,7 @@ export async function syncItemData(accessToken: string, institution: string) {
       balance_current: acc.balances.current,
       institution: instName,
     }));
-    await saveAccounts(accountsToSave);
+    await saveAccounts(accountsToSave, userId);
 
     // 2. Fetch Transactions (last 30 days)
     const today = new Date();
@@ -50,7 +50,7 @@ export async function syncItemData(accessToken: string, institution: string) {
       institution: instName,
       pending: tx.pending,
     }));
-    await saveTransactions(txsToSave);
+    await saveTransactions(txsToSave, userId);
 
   } catch (error) {
     console.error(`Error syncing data for ${institution}:`, error);

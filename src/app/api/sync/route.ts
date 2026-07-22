@@ -3,10 +3,16 @@ import { getCredential } from '@/lib/db';
 import { isPlaidConfigured } from '@/lib/plaid';
 import { generateMockData } from '@/lib/mock';
 import { syncItemData } from '@/lib/sync-helper';
+import { getSessionUserId } from '@/lib/session';
 
 export async function POST() {
   try {
-    const useMockCred = await getCredential('use_mock_data');
+    const userId = await getSessionUserId();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const useMockCred = await getCredential(userId, 'use_mock_data');
     const useMockData = useMockCred === null 
       ? (process.env.USE_MOCK_DATA || 'true').toLowerCase() === 'true' 
       : useMockCred.toLowerCase() === 'true';
@@ -14,20 +20,20 @@ export async function POST() {
     const activeUseMock = !isPlaidConfigured || useMockData;
 
     if (activeUseMock) {
-      await generateMockData();
+      await generateMockData(userId);
       return NextResponse.json({ status: "success", message: "Mock data refreshed." });
     }
 
-    const boaToken = await getCredential("access_token_boa");
-    const cashappToken = await getCredential("access_token_cashapp");
+    const boaToken = await getCredential(userId, "access_token_boa");
+    const cashappToken = await getCredential(userId, "access_token_cashapp");
 
     const synced: string[] = [];
     if (boaToken) {
-      await syncItemData(boaToken, "boa");
+      await syncItemData(boaToken, "boa", userId);
       synced.push("boa");
     }
     if (cashappToken) {
-      await syncItemData(cashappToken, "cashapp");
+      await syncItemData(cashappToken, "cashapp", userId);
       synced.push("cashapp");
     }
 
