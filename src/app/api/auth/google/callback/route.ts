@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { createUser, getUserByEmail } from '@/lib/db';
-import { setSessionCookie } from '@/lib/session';
+import { createUser, getUserByEmail, updateUser } from '@/lib/db';
+import { setSessionCookie, getSessionUserId } from '@/lib/session';
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -50,8 +50,22 @@ export async function GET(request: Request) {
       }
     }
 
-    // Lookup user by email
     const cleanEmail = googleUser.email.trim().toLowerCase();
+
+    // Check if user is already logged in (Linking Mode)
+    const activeUserId = await getSessionUserId();
+    if (activeUserId) {
+      const existingUser = await getUserByEmail(cleanEmail);
+      if (existingUser && existingUser.id !== activeUserId) {
+        return NextResponse.redirect(`${origin}/dashboard/settings?error=${encodeURIComponent('This Google account is already linked to another Munyun profile.')}`);
+      }
+      
+      // Update Google connection details
+      await updateUser(activeUserId, { google_id: cleanEmail });
+      return NextResponse.redirect(`${origin}/dashboard/settings?google_link=success`);
+    }
+
+    // Standard Login / Sign-up Mode
     let user = await getUserByEmail(cleanEmail);
 
     if (!user) {
@@ -66,7 +80,7 @@ export async function GET(request: Request) {
         password: '',
         totp_secret: null,
         totp_enabled: false,
-        google_id: 'google_oauth_user',
+        google_id: cleanEmail,
         avatar_url: null
       };
       await createUser(user);

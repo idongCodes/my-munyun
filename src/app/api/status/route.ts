@@ -46,5 +46,7 @@ export async function GET() {
     mobile_number: mobileNumber,
     name_last_updated_at: nameLastUpdatedAt,
     supabase_active: isSupabaseConfigured(),
+    google_linked: user && user.google_id ? true : false,
+    has_password: user && user.password ? true : false,
   });
 }
