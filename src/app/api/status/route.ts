@@ -1,12 +1,19 @@
 import { NextResponse } from 'next/server';
-import { getCredential, initDb } from '@/lib/db';
+import { getCredential, initDb, getUserById } from '@/lib/db';
 import { isPlaidConfigured } from '@/lib/plaid';
 import { isSupabaseConfigured } from '@/lib/supabase';
+import { getSessionUserId } from '@/lib/session';
 
 export async function GET() {
   await initDb();
   
-  const useMockCred = await getCredential('use_mock_data');
+  const userId = await getSessionUserId();
+  let user: any = null;
+  if (userId) {
+    user = await getUserById(userId);
+  }
+
+  const useMockCred = userId ? await getCredential(userId, 'use_mock_data') : null;
   const useMockData = useMockCred === null 
     ? (process.env.USE_MOCK_DATA || 'true').toLowerCase() === 'true' 
     : useMockCred.toLowerCase() === 'true';
@@ -14,16 +21,16 @@ export async function GET() {
   const forceMock = !isPlaidConfigured;
   const activeUseMock = forceMock ? true : useMockData;
 
-  const boaLinked = await getCredential('access_token_boa') !== null;
-  const cashappLinked = await getCredential('access_token_cashapp') !== null;
+  const boaLinked = userId ? (await getCredential(userId, 'access_token_boa') !== null) : false;
+  const cashappLinked = userId ? (await getCredential(userId, 'access_token_cashapp') !== null) : false;
 
-  const firstName = await getCredential('user_firstName') || '';
-  const lastName = await getCredential('user_lastName') || '';
-  const preferredName = await getCredential('user_preferredName') || '';
-  const primaryGoal = await getCredential('user_primaryGoal') || 'budget';
-  const email = await getCredential('user_email') || '';
-  const mobileNumber = await getCredential('user_mobileNumber') || '';
-  const nameLastUpdatedAt = await getCredential('user_name_last_updated_at') || '';
+  const firstName = user ? user.first_name : '';
+  const lastName = user ? user.last_name : '';
+  const preferredName = user ? user.preferred_name : '';
+  const primaryGoal = userId ? (await getCredential(userId, 'user_primaryGoal') || 'budget') : 'budget';
+  const email = user ? user.email : '';
+  const mobileNumber = user ? user.mobile_number : '';
+  const nameLastUpdatedAt = userId ? (await getCredential(userId, 'user_name_last_updated_at') || '') : '';
 
   return NextResponse.json({
     is_plaid_configured: isPlaidConfigured,

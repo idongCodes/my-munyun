@@ -144,18 +144,20 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
         body: JSON.stringify({ action: 'sms_send', phone: mobileNumber })
       });
       const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || data.message || 'Failed to request verification code.');
+      }
       setRegSmsSent(true);
       if (data.demoMode) {
         setAuthSuccessMsg(`Security SMS code sent! (Demo code: ${data.code})`);
       } else {
         setAuthSuccessMsg(`SMS verification code sent to ${mobileNumber}.`);
       }
-    } catch {
-      setRegSmsSent(true);
-      setAuthSuccessMsg(`SMS verification code sent to ${mobileNumber}. (Demo code: 123456)`);
+      setRegStep(2);
+    } catch (err: any) {
+      console.error('[SMS Send Registration] Exception:', err);
+      setAuthError(err.message || 'Server error occurred while requesting verification code.');
     }
-
-    setRegStep(2);
   };
 
   // Step 2 -> Final Registration Submit
@@ -201,7 +203,7 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
       const res = await fetch('/api/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'sms_verify', code: regSmsCode })
+        body: JSON.stringify({ action: 'sms_verify', code: regSmsCode, phone: mobileNumber })
       });
       const data = await res.json();
       if (res.ok && data.success) {
@@ -227,12 +229,16 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
   const handleTotpLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError('');
+    if (!email.trim()) {
+      setAuthError('Please enter your email address.');
+      return;
+    }
     try {
       console.log('[TOTP Login] Submitting code:', totpCode);
       const res = await fetch('/api/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'totp_login', code: totpCode })
+        body: JSON.stringify({ action: 'totp_login', code: totpCode, email })
       });
       console.log('[TOTP Login] Status:', res.status, res.statusText);
       const data = await res.json();
@@ -269,7 +275,10 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
       console.log('[SMS Request] Status:', res.status, res.statusText);
       const data = await res.json();
       console.log('[SMS Request] Data:', data);
-      if (res.ok && data.success) {
+      if (!res.ok) {
+        throw new Error(data.error || data.message || 'Failed to send SMS.');
+      }
+      if (data.success) {
         setSmsSent(true);
         if (data.demoMode) {
           setAuthSuccessMsg(`Demo SMS code generated: ${data.code}`);
@@ -281,8 +290,7 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
       }
     } catch (err: any) {
       console.error('[SMS Request] Exception:', err);
-      setSmsSent(true);
-      setAuthSuccessMsg(`SMS verification code sent to ${phone}. (Demo code: 123456)`);
+      setAuthError(err.message || 'Connection failure. Please check database state.');
     }
   };
 
@@ -294,7 +302,7 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
       const res = await fetch('/api/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'sms_verify', code: smsCode })
+        body: JSON.stringify({ action: 'sms_verify', code: smsCode, phone })
       });
       console.log('[SMS Verify] Status:', res.status, res.statusText);
       const data = await res.json();
@@ -823,6 +831,19 @@ export default function AuthContainer({ initialMode }: AuthContainerProps) {
               {/* Flow 1: TOTP */}
               {authMethod === 'totp' && (
                 <form onSubmit={handleTotpLogin} className="space-y-5 sm:space-y-6">
+                  <div className="space-y-3">
+                    <label className="block text-xs uppercase font-bold text-slate-200 tracking-wider">
+                      Email Address
+                    </label>
+                    <input 
+                      type="email" 
+                      required
+                      placeholder="you@example.com" 
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="form-input py-3 px-4 text-xs" 
+                    />
+                  </div>
                   <div className="space-y-3">
                     <label className="block text-xs uppercase font-bold text-slate-200 tracking-wider">
                       Google Authenticator Code

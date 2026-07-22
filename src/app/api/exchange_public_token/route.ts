@@ -3,13 +3,19 @@ import { getCredential, setCredential } from '@/lib/db';
 import { plaidClient, isPlaidConfigured } from '@/lib/plaid';
 import { generateMockData } from '@/lib/mock';
 import { syncItemData } from '@/lib/sync-helper';
+import { getSessionUserId } from '@/lib/session';
 
 export async function POST(request: Request) {
   try {
+    const userId = await getSessionUserId();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await request.json();
     const { public_token, institution } = body;
 
-    const useMockCred = await getCredential('use_mock_data');
+    const useMockCred = await getCredential(userId, 'use_mock_data');
     const useMockData = useMockCred === null 
       ? (process.env.USE_MOCK_DATA || 'true').toLowerCase() === 'true' 
       : useMockCred.toLowerCase() === 'true';
@@ -17,8 +23,8 @@ export async function POST(request: Request) {
     const activeUseMock = !isPlaidConfigured || useMockData;
 
     if (activeUseMock) {
-      await setCredential(`access_token_${institution}`, `mock_access_token_${institution}`);
-      await generateMockData(institution);
+      await setCredential(userId, `access_token_${institution}`, `mock_access_token_${institution}`);
+      await generateMockData(userId, institution);
       return NextResponse.json({ status: "success" });
     }
 
@@ -29,11 +35,11 @@ export async function POST(request: Request) {
     const access_token = response.data.access_token;
     const item_id = response.data.item_id;
 
-    await setCredential(`access_token_${institution}`, access_token);
-    await setCredential(`item_id_${institution}`, item_id);
+    await setCredential(userId, `access_token_${institution}`, access_token);
+    await setCredential(userId, `item_id_${institution}`, item_id);
 
     // Fetch initial balances and transactions
-    await syncItemData(access_token, institution);
+    await syncItemData(access_token, institution, userId);
 
     return NextResponse.json({ status: "success" });
   } catch (error: any) {

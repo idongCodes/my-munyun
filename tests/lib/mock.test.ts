@@ -8,7 +8,7 @@ describe('Mock Data Module (mock.ts)', () => {
   });
 
   it('should generate mock accounts and transactions successfully', async () => {
-    await generateMockData();
+    await generateMockData('boa');
     const accounts = await getAccounts();
     const transactions = await getTransactions();
 

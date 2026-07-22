@@ -85,7 +85,7 @@ describe('Auth API Route (api/auth)', () => {
     const verifyReq = new Request('http://localhost/api/auth', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'sms_verify', code })
+      body: JSON.stringify({ action: 'sms_verify', code, phone: '+17743126471' })
     });
 
     const verifyRes = await POST(verifyReq);

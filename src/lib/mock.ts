@@ -89,20 +89,33 @@ const INSTITUTION_MAP: Record<string, { name: string; accounts: any[] }> = {
   }
 };
 
-export async function generateMockData(institutionCode?: string) {
+export async function generateMockData(userId: string, institutionCode?: string) {
+  let finalUserId = userId;
+  let finalInstCode = institutionCode;
+
+  // Detect legacy single-argument call (e.g. generateMockData('boa'))
+  if (institutionCode === undefined && INSTITUTION_MAP[userId] !== undefined) {
+    finalUserId = '00000000-0000-0000-0000-000000000000';
+    finalInstCode = userId;
+  }
+
   let institutionsToSync: string[] = [];
-  if (institutionCode) {
-    institutionsToSync = [institutionCode];
+  if (finalInstCode) {
+    institutionsToSync = [finalInstCode];
   } else {
-    // Find all active connected institutions in the database
+    // Find all active connected institutions for this specific user
     if (isSupabaseConfigured() && supabase) {
-      const { data } = await supabase.from('credentials').select('key').like('key', 'access_token_%');
+      const { data } = await supabase
+        .from('credentials')
+        .select('key')
+        .eq('user_id', finalUserId)
+        .like('key', 'access_token_%');
       if (data) {
         institutionsToSync = data.map((r: any) => r.key.replace('access_token_', ''));
       }
     } else {
       const db = await getDb();
-      const rows = await db.all("SELECT key FROM credentials WHERE key LIKE 'access_token_%'");
+      const rows = await db.all("SELECT key FROM credentials WHERE user_id = ? AND key LIKE 'access_token_%'", finalUserId);
       institutionsToSync = rows.map((r: any) => r.key.replace('access_token_', ''));
     }
   }
@@ -118,14 +131,14 @@ export async function generateMockData(institutionCode?: string) {
 
     const instName = config.name;
 
-    // 1. Clear old data specifically for this institution (additive style)
+    // 1. Clear old data specifically for this institution and user (additive style)
     if (isSupabaseConfigured() && supabase) {
-      await supabase.from('accounts').delete().eq('institution', instName);
-      await supabase.from('transactions').delete().eq('institution', instName);
+      await supabase.from('accounts').delete().eq('user_id', finalUserId).eq('institution', instName);
+      await supabase.from('transactions').delete().eq('user_id', finalUserId).eq('institution', instName);
     } else {
       const db = await getDb();
-      await db.run('DELETE FROM accounts WHERE institution = ?', instName);
-      await db.run('DELETE FROM transactions WHERE institution = ?', instName);
+      await db.run('DELETE FROM accounts WHERE user_id = ? AND institution = ?', finalUserId, instName);
+      await db.run('DELETE FROM transactions WHERE user_id = ? AND institution = ?', finalUserId, instName);
     }
 
     // 2. Save accounts
@@ -133,7 +146,7 @@ export async function generateMockData(institutionCode?: string) {
       ...acc,
       institution: instName
     }));
-    await saveAccounts(accountsWithInst);
+    await saveAccounts(accountsWithInst, finalUserId);
 
     // 3. Generate 30 days of transactions
     const categories = ["Income", "Groceries", "Dining", "Subscriptions", "Transfers", "Shopping", "Utilities", "Travel"];
@@ -225,6 +238,6 @@ export async function generateMockData(institutionCode?: string) {
       currDate.setDate(currDate.getDate() + 1);
     }
 
-    await saveTransactions(mockTxs);
+    await saveTransactions(mockTxs, finalUserId);
   }
 }
