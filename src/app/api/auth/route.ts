@@ -11,7 +11,16 @@ import {
 } from '@/lib/db';
 import { generateSecret, generateURI, verifySync } from 'otplib';
 import { cleanPhoneNumber, sendTwilioSms } from '@/lib/twilio';
-import { setSessionCookie, clearSessionCookie, getSessionUserId } from '@/lib/session';
+import { 
+  setSessionCookie, 
+  clearSessionCookie, 
+  getSessionUserId,
+  encryptSession,
+  decryptSession,
+  setTempSmsCookie,
+  getTempSmsCookie,
+  clearTempSmsCookie
+} from '@/lib/session';
 
 export async function POST(request: Request) {
   try {
@@ -112,13 +121,13 @@ export async function POST(request: Request) {
         return NextResponse.json({ success: false, message: `Phone number ${cleanedNum} not authorized.` });
       }
 
-      // Check if user exists by phone
-      const user = await getUserByPhone(cleanedNum);
-      const userId = user ? user.id : `temp_${cleanedNum}`;
-
       const code = String(Math.floor(100000 + Math.random() * 900000));
-      await setCredential(userId, "sms_code", code);
-      await setCredential(userId, "sms_expiry", String(Date.now() + 5 * 60 * 1000)); // 5 min expiry
+      
+      // Store verification state in a secure, stateless, encrypted cookie
+      const expiry = Date.now() + 5 * 60 * 1000; // 5 min expiry
+      const encrypted = encryptSession(`${cleanedNum}:${code}:${expiry}`);
+      
+      await setTempSmsCookie(encrypted);
 
       const sent = await sendTwilioSms(cleanedNum, code);
       if (sent) {
@@ -136,14 +145,19 @@ export async function POST(request: Request) {
       const cleanCode = (code || "").replace(/\s/g, "");
       const cleanedNum = cleanPhoneNumber(phone);
 
-      const user = await getUserByPhone(cleanedNum);
-      const userId = user ? user.id : `temp_${cleanedNum}`;
+      const cookieVal = await getTempSmsCookie();
+      if (!cookieVal) {
+        return NextResponse.json({ success: false, message: "No SMS code requested or session expired." });
+      }
 
-      const storedCode = await getCredential(userId, "sms_code");
-      const storedExpiry = await getCredential(userId, "sms_expiry");
+      const decrypted = decryptSession(cookieVal);
+      if (!decrypted) {
+        return NextResponse.json({ success: false, message: "Verification session expired. Please request a new one." });
+      }
 
-      if (!storedCode || !storedExpiry) {
-        return NextResponse.json({ success: false, message: "No SMS code requested." });
+      const [storedPhone, storedCode, storedExpiry] = decrypted.split(':');
+      if (storedPhone !== cleanedNum) {
+        return NextResponse.json({ success: false, message: "Phone number mismatch. Please request a new code." });
       }
 
       if (Date.now() > Number(storedExpiry)) {
@@ -151,6 +165,10 @@ export async function POST(request: Request) {
       }
 
       if (cleanCode === storedCode) {
+        // Successful verification! Clear the temp cookie
+        await clearTempSmsCookie();
+
+        const user = await getUserByPhone(cleanedNum);
         if (user) {
           // It's a login, set session cookie!
           await setSessionCookie(user.id);

@@ -78,3 +78,29 @@ export async function getSessionUserId(): Promise<string | null> {
     return null;
   }
 }
+
+export async function setTempSmsCookie(value: string): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.set('temp_sms_verify', value, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 5 * 60, // 5 minutes
+    path: '/'
+  });
+}
+
+export async function getTempSmsCookie(): Promise<string | null> {
+  try {
+    const cookieStore = await cookies();
+    const cookie = cookieStore.get('temp_sms_verify');
+    return cookie ? cookie.value : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+export async function clearTempSmsCookie(): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.delete('temp_sms_verify');
+}
