@@ -2,13 +2,14 @@ import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
+  const from = url.searchParams.get('from') || 'settings';
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const origin = url.origin;
   const redirectUri = `${origin}/api/auth/google/callback`;
 
   if (!clientId) {
-    // Demo mode: redirect to callback with demo flag when credentials aren't configured
-    return NextResponse.redirect(`${origin}/api/auth/google/callback?demo=true`);
+    // Demo mode: redirect to callback with demo flag and state when credentials aren't configured
+    return NextResponse.redirect(`${origin}/api/auth/google/callback?demo=true&state=${from}`);
   }
 
   const scope = 'openid profile email';
@@ -17,7 +18,8 @@ export async function GET(request: Request) {
     `client_id=${encodeURIComponent(clientId)}&` +
     `redirect_uri=${encodeURIComponent(redirectUri)}&` +
     `scope=${encodeURIComponent(scope)}&` +
-    `prompt=select_account`;
+    `prompt=select_account&` +
+    `state=${encodeURIComponent(from)}`;
 
   return NextResponse.redirect(googleAuthUrl);
 }
