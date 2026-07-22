@@ -5,10 +5,13 @@ import { setSessionCookie, getSessionUserId } from '@/lib/session';
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get('code');
+  const state = url.searchParams.get('state') || 'settings';
   const origin = url.origin;
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   const redirectUri = `${origin}/api/auth/google/callback`;
+
+  const redirectTarget = state === 'dashboard' ? '/dashboard' : '/dashboard/settings';
 
   try {
     let googleUser = {
@@ -18,7 +21,9 @@ export async function GET(request: Request) {
       email: 'user@gmail.com'
     };
 
-    if (code && clientId && clientSecret) {
+    const isDemo = url.searchParams.get('demo') === 'true';
+
+    if (!isDemo && code && clientId && clientSecret) {
       // Exchange authorization code for access token
       const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
         method: 'POST',
@@ -57,12 +62,12 @@ export async function GET(request: Request) {
     if (activeUserId) {
       const existingUser = await getUserByEmail(cleanEmail);
       if (existingUser && existingUser.id !== activeUserId) {
-        return NextResponse.redirect(`${origin}/dashboard/settings?error=${encodeURIComponent('This Google account is already linked to another Munyun profile.')}`);
+        return NextResponse.redirect(`${origin}${redirectTarget}?error=${encodeURIComponent('This Google account is already linked to another Munyun profile.')}`);
       }
       
       // Update Google connection details
       await updateUser(activeUserId, { google_id: cleanEmail });
-      return NextResponse.redirect(`${origin}/dashboard/settings?google_link=success`);
+      return NextResponse.redirect(`${origin}${redirectTarget}?google_link=success`);
     }
 
     // Standard Login / Sign-up Mode

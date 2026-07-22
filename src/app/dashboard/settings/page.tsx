@@ -248,16 +248,16 @@ export default function SettingsPage() {
 
       <div className="max-w-4xl mx-auto space-y-8 relative z-10">
         {/* Header */}
-        <header className="flex items-center justify-between border-b border-slate-800/80 pb-6">
+        <header className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800/80 pb-6 gap-4">
           <div className="flex items-center gap-3">
             <span className="text-3xl">⚙️</span>
             <h1 className="text-2xl sm:text-3xl font-extrabold font-outfit tracking-tight">
-              Portal <span className="text-[#397ef7]">Settings</span>
+              Settings
             </h1>
           </div>
           <Link 
             href="/dashboard"
-            className="flex items-center gap-2 text-xs font-semibold text-slate-300 hover:text-white bg-slate-900/60 px-4 py-2 rounded-full border border-slate-700/60 transition-colors shadow-sm"
+            className="flex items-center gap-2 text-xs font-semibold text-slate-300 hover:text-white bg-slate-900/60 px-4 py-2 rounded-full border border-slate-700/60 transition-colors shadow-sm w-fit"
           >
             <ArrowLeft size={14} />
             <span>Back to Dashboard</span>
