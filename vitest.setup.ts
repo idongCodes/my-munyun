@@ -17,13 +17,25 @@ try {
 }
 
 // Mock the session module under its alias path
-vi.mock('@/lib/session', () => ({
-  getSessionUserId: vi.fn().mockResolvedValue('00000000-0000-0000-0000-000000000000'),
-  setSessionCookie: vi.fn().mockResolvedValue(undefined),
-  clearSessionCookie: vi.fn().mockResolvedValue(undefined),
-  encryptSession: vi.fn().mockReturnValue('mock_token'),
-  decryptSession: vi.fn().mockReturnValue('00000000-0000-0000-0000-000000000000')
-}));
+vi.mock('@/lib/session', () => {
+  let tempSmsCookie = '';
+  return {
+    getSessionUserId: vi.fn().mockResolvedValue('00000000-0000-0000-0000-000000000000'),
+    setSessionCookie: vi.fn().mockResolvedValue(undefined),
+    clearSessionCookie: vi.fn().mockResolvedValue(undefined),
+    encryptSession: vi.fn().mockImplementation((val: string) => val),
+    decryptSession: vi.fn().mockImplementation((val: string) => val),
+    setTempSmsCookie: vi.fn().mockImplementation(async (val: string) => {
+      tempSmsCookie = val;
+    }),
+    getTempSmsCookie: vi.fn().mockImplementation(async () => {
+      return tempSmsCookie;
+    }),
+    clearTempSmsCookie: vi.fn().mockImplementation(async () => {
+      tempSmsCookie = '';
+    })
+  };
+});
 
 beforeAll(async () => {
   // Setup clean global test environment
